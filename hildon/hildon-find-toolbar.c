@@ -132,37 +132,7 @@ enum
 
 static guint                                    HildonFindToolbar_signal [LAST_SIGNAL] = {0};
 
-/**
- * hildon_find_toolbar_get_type:
- *
- * Initializes and returns the type of a #HildonFindToolbar.
- *
- * Returns: GType of #HildonFindToolbar
- */
-GType G_GNUC_CONST
-hildon_find_toolbar_get_type                    (void)
-{
-    static GType find_toolbar_type = 0;
-
-    if (! find_toolbar_type) {
-        static const GTypeInfo find_toolbar_info = {
-            sizeof(HildonFindToolbarClass),
-            NULL,       /* base_init */
-            NULL,       /* base_finalize */
-            (GClassInitFunc) hildon_find_toolbar_class_init,
-            NULL,       /* class_finalize */
-            NULL,       /* class_data */
-            sizeof(HildonFindToolbar),
-            0,  /* n_preallocs */
-            (GInstanceInitFunc) hildon_find_toolbar_init,
-        };
-        find_toolbar_type = g_type_register_static (GTK_TYPE_TOOLBAR,
-                "HildonFindToolbar",
-                &find_toolbar_info, 0);
-    }
-
-    return find_toolbar_type;
-}
+G_DEFINE_TYPE_WITH_PRIVATE (HildonFindToolbar, hildon_find_toolbar, GTK_TYPE_TOOLBAR)
 
 static GtkTreeModel*
 hildon_find_toolbar_get_list_model              (HildonFindToolbarPrivate *priv)
@@ -236,7 +206,8 @@ hildon_find_toolbar_get_property                (GObject *object,
                                                  GValue *value,
                                                  GParamSpec *pspec)
 {
-    HildonFindToolbarPrivate *priv = HILDON_FIND_TOOLBAR_GET_PRIVATE (object);
+    HildonFindToolbar *self = HILDON_FIND_TOOLBAR(object);
+    HildonFindToolbarPrivate *priv = self->priv;
     g_assert (priv);
 
     const gchar *string;
@@ -285,7 +256,7 @@ hildon_find_toolbar_set_property                (GObject *object,
                                                  GParamSpec *pspec)
 {
     HildonFindToolbar *self = HILDON_FIND_TOOLBAR(object);
-    HildonFindToolbarPrivate *priv = HILDON_FIND_TOOLBAR_GET_PRIVATE (object);
+    HildonFindToolbarPrivate *priv = self->priv;
     g_assert (priv);
 
     GtkTreeModel *model;
@@ -353,7 +324,7 @@ hildon_find_toolbar_find_string                 (HildonFindToolbar *self,
 {
     GtkTreeModel *model = NULL;
     gchar *old_string;
-    HildonFindToolbarPrivate *priv = HILDON_FIND_TOOLBAR_GET_PRIVATE (self);
+    HildonFindToolbarPrivate *priv = self->priv;
     g_assert (priv);
 
     model = hildon_find_toolbar_get_list_model (priv);
@@ -377,7 +348,7 @@ static gboolean
 hildon_find_toolbar_history_append              (HildonFindToolbar *self,
                                                  gpointer data) 
 {
-    HildonFindToolbarPrivate *priv = HILDON_FIND_TOOLBAR_GET_PRIVATE (self);
+    HildonFindToolbarPrivate *priv = self->priv;
     g_assert (priv);
 
     gchar *string;
@@ -477,11 +448,7 @@ hildon_find_toolbar_entry_activate              (GtkWidget *widget,
 static void
 hildon_find_toolbar_class_init                  (HildonFindToolbarClass *klass)
 {
-    GObjectClass *object_class;
-
-    g_type_class_add_private (klass, sizeof (HildonFindToolbarPrivate));
-
-    object_class = G_OBJECT_CLASS(klass);
+    GObjectClass *object_class = (GObjectClass *) klass;
 
     object_class->get_property = hildon_find_toolbar_get_property;
     object_class->set_property = hildon_find_toolbar_set_property;
@@ -634,16 +601,21 @@ hildon_find_toolbar_init                        (HildonFindToolbar *self)
 {
     GtkToolItem *label_container;
     GtkToolItem *entry_combo_box_container;
-    GtkAlignment *alignment;
+    GtkSizeGroup *size_group;
 
-    HildonFindToolbarPrivate *priv = HILDON_FIND_TOOLBAR_GET_PRIVATE (self);
+    self->priv = hildon_find_toolbar_get_instance_private (self);
+    HildonFindToolbarPrivate *priv = self->priv;
     g_assert (priv);
+
+    size_group = gtk_size_group_new (GTK_SIZE_GROUP_VERTICAL);
 
     /* Create the label */
     priv->label = gtk_label_new (_("ecdg_ti_find_toolbar_label"));
 
-    gtk_misc_set_padding (GTK_MISC (priv->label), FIND_LABEL_XPADDING,
-            FIND_LABEL_YPADDING);
+    gtk_widget_set_margin_start (priv->label, FIND_LABEL_XPADDING);
+    gtk_widget_set_margin_end (priv->label, FIND_LABEL_XPADDING);
+    gtk_widget_set_margin_top (priv->label, FIND_LABEL_YPADDING);
+    gtk_widget_set_margin_bottom (priv->label, FIND_LABEL_YPADDING);
 
     label_container = gtk_tool_item_new ();
     gtk_container_add (GTK_CONTAINER (label_container), 
@@ -654,15 +626,14 @@ hildon_find_toolbar_init                        (HildonFindToolbar *self)
 
     /* ComboBoxEntry for search prefix string / history list */
     priv->entry_combo_box = GTK_COMBO_BOX (gtk_combo_box_new_with_entry ());
+    gtk_widget_set_halign(GTK_WIDGET (priv->entry_combo_box), GTK_ALIGN_START);
+    gtk_widget_set_valign(GTK_WIDGET (priv->entry_combo_box), GTK_ALIGN_CENTER);
 
     entry_combo_box_container = gtk_tool_item_new ();
-    alignment = GTK_ALIGNMENT (gtk_alignment_new (0, 0.5, 1, 0));
 
     gtk_tool_item_set_expand (entry_combo_box_container, TRUE);
-    gtk_container_add (GTK_CONTAINER (alignment),
-            GTK_WIDGET (priv->entry_combo_box));
     gtk_container_add (GTK_CONTAINER (entry_combo_box_container),
-            GTK_WIDGET (alignment));
+            GTK_WIDGET (priv->entry_combo_box));
     gtk_widget_show_all(GTK_WIDGET (entry_combo_box_container));
     gtk_toolbar_insert (GTK_TOOLBAR (self), entry_combo_box_container, -1);
     g_signal_connect (hildon_find_toolbar_get_entry (priv),
@@ -687,6 +658,11 @@ hildon_find_toolbar_init                        (HildonFindToolbar *self)
     if ( gtk_widget_get_can_focus ( gtk_bin_get_child (GTK_BIN (priv->close_button)) ) )
         gtk_widget_set_can_focus (
                 gtk_bin_get_child (GTK_BIN (priv->close_button)), FALSE);
+
+    gtk_size_group_add_widget (size_group, GTK_WIDGET(priv->entry_combo_box));
+    gtk_size_group_add_widget (size_group, GTK_WIDGET(priv->separator));
+    gtk_size_group_add_widget (size_group, GTK_WIDGET(priv->close_button));
+    g_object_unref (size_group);
 }
 
 /**
@@ -698,12 +674,12 @@ hildon_find_toolbar_init                        (HildonFindToolbar *self)
  *
  * Returns: a new #HildonFindToolbar.
  */
-GtkWidget*
+HildonFindToolbar*
 hildon_find_toolbar_new                         (const gchar *label)
 {
-    GtkWidget *findtoolbar;
+    HildonFindToolbar *findtoolbar;
 
-    findtoolbar = GTK_WIDGET (g_object_new (HILDON_TYPE_FIND_TOOLBAR, NULL));
+    findtoolbar = g_object_new (HILDON_TYPE_FIND_TOOLBAR, NULL);
 
     if (label != NULL)
         g_object_set(findtoolbar, "label", label, NULL);
@@ -723,12 +699,12 @@ hildon_find_toolbar_new                         (const gchar *label)
  *
  * Returns: a new #HildonFindToolbar.
  */
-GtkWidget*
+HildonFindToolbar*
 hildon_find_toolbar_new_with_model              (const gchar *label,
                                                  GtkListStore *model,
                                                  gint column)
 {
-    GtkWidget *findtoolbar;
+    HildonFindToolbar *findtoolbar;
 
     findtoolbar = hildon_find_toolbar_new (label);
 
@@ -751,10 +727,9 @@ hildon_find_toolbar_highlight_entry             (HildonFindToolbar *self,
                                                  gboolean get_focus)
 {
     GtkEntry *entry = NULL;
-    HildonFindToolbarPrivate *priv;
+    HildonFindToolbarPrivate *priv = self->priv;
 
     g_return_if_fail (HILDON_IS_FIND_TOOLBAR (self));
-    priv = HILDON_FIND_TOOLBAR_GET_PRIVATE (self);
     g_assert (priv);
 
     entry = hildon_find_toolbar_get_entry (priv);
@@ -781,7 +756,7 @@ hildon_find_toolbar_set_active                  (HildonFindToolbar *toolbar,
     HildonFindToolbarPrivate *priv;
 
     g_return_if_fail (HILDON_IS_FIND_TOOLBAR (toolbar));
-    priv = HILDON_FIND_TOOLBAR_GET_PRIVATE (toolbar);
+    priv = toolbar->priv;
 
     gtk_combo_box_set_active (GTK_COMBO_BOX (priv->entry_combo_box), index);
 }
@@ -804,7 +779,7 @@ hildon_find_toolbar_get_active                  (HildonFindToolbar *toolbar)
     HildonFindToolbarPrivate *priv;
 
     g_return_val_if_fail (HILDON_IS_FIND_TOOLBAR (toolbar), -1);
-    priv = HILDON_FIND_TOOLBAR_GET_PRIVATE (toolbar);
+    priv = toolbar->priv;
 
     return gtk_combo_box_get_active (GTK_COMBO_BOX (priv->entry_combo_box));
 }
@@ -825,7 +800,7 @@ hildon_find_toolbar_set_active_iter             (HildonFindToolbar *toolbar,
     HildonFindToolbarPrivate *priv;
 
     g_return_if_fail (HILDON_IS_FIND_TOOLBAR (toolbar));
-    priv = HILDON_FIND_TOOLBAR_GET_PRIVATE (toolbar);
+    priv = toolbar->priv;
 
     gtk_combo_box_set_active_iter (GTK_COMBO_BOX (priv->entry_combo_box), iter);
 }
@@ -848,7 +823,7 @@ hildon_find_toolbar_get_active_iter             (HildonFindToolbar *toolbar,
     HildonFindToolbarPrivate *priv;
 
     g_return_val_if_fail (HILDON_IS_FIND_TOOLBAR (toolbar), FALSE);
-    priv = HILDON_FIND_TOOLBAR_GET_PRIVATE (toolbar);
+    priv = toolbar->priv;
 
     return gtk_combo_box_get_active_iter (GTK_COMBO_BOX (priv->entry_combo_box), iter);
 }
@@ -872,7 +847,7 @@ hildon_find_toolbar_get_last_index              (HildonFindToolbar *toolbar)
     GtkTreeModel *filter_model;
     
     g_return_val_if_fail (HILDON_IS_FIND_TOOLBAR (toolbar), FALSE);
-    priv = HILDON_FIND_TOOLBAR_GET_PRIVATE (toolbar);
+    priv = toolbar->priv;
 
     filter_model = gtk_combo_box_get_model (GTK_COMBO_BOX (priv->entry_combo_box));
 

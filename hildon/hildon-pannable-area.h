@@ -107,7 +107,7 @@ typedef struct                                  _HildonPannableAreaPrivate Hildo
 
 struct                                          _HildonPannableArea
 {
-    GtkBin parent;
+    GtkScrolledWindow parent;
 
     /* private */
     HildonPannableAreaPrivate *priv;
@@ -115,7 +115,7 @@ struct                                          _HildonPannableArea
 
 struct                                          _HildonPannableAreaClass
 {
-    GtkBinClass parent_class;
+    GtkScrolledWindowClass parent_class;
 
   void (* horizontal_movement) (HildonPannableArea *area,
                                 HildonMovementDirection direction,
@@ -125,12 +125,9 @@ struct                                          _HildonPannableAreaClass
                               gdouble x, gdouble y);
 };
 
-GType hildon_pannable_area_get_type             (void);
+GType hildon_pannable_area_get_type             (void) G_GNUC_CONST;
 
 GtkWidget* hildon_pannable_area_new             (void);
-GtkWidget* hildon_pannable_area_new_full        (gint mode, gboolean enabled,
-                                                 gdouble vel_min, gdouble vel_max,
-                                                 gdouble decel, guint sps);
 void hildon_pannable_area_add_with_viewport     (HildonPannableArea *area,
                                                  GtkWidget *child);
 void hildon_pannable_area_scroll_to             (HildonPannableArea *area,

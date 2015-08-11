@@ -36,18 +36,18 @@ main                                            (int argc,
 
     GtkDialog *dialog = GTK_DIALOG (gtk_dialog_new ());
 
-    GtkVBox *vbox = GTK_VBOX (gtk_dialog_get_content_area (dialog));
+    GtkBox *vbox = GTK_BOX (gtk_dialog_get_content_area (dialog));
 
     GtkSizeGroup *size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 
     GtkWidget *caption1 = hildon_caption_new (size_group, "Caption std", gtk_entry_new (), 
                                               NULL, 0);
     GtkWidget *caption2 = hildon_caption_new (size_group, "Caption left", gtk_entry_new (), 
-                                              gtk_image_new_from_stock (GTK_STOCK_OK, GTK_ICON_SIZE_BUTTON), 0);
+                                              gtk_image_new_from_icon_name ("dialog-ok", GTK_ICON_SIZE_BUTTON), 0);
     GtkWidget *caption3 = hildon_caption_new (size_group, "Caption right", gtk_entry_new (), 
-                                              gtk_image_new_from_stock (GTK_STOCK_OK, GTK_ICON_SIZE_BUTTON), 0);
+                                              gtk_image_new_from_icon_name ("dialog-ok", GTK_ICON_SIZE_BUTTON), 0);
     GtkWidget *caption4 = hildon_caption_new (size_group, "Check caption", gtk_check_button_new (), 
-                                              gtk_image_new_from_stock (GTK_STOCK_OK, GTK_ICON_SIZE_BUTTON), 0);
+                                              gtk_image_new_from_icon_name ("dialog-ok", GTK_ICON_SIZE_BUTTON), 0);
     GtkWidget *caption5 = hildon_caption_new (size_group, "", gtk_entry_new (), 
                                               NULL, 0);
 

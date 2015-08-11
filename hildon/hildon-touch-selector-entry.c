@@ -387,8 +387,8 @@ entry_on_text_changed (GtkEditable * editable,
   gchar *text;
   gboolean found = FALSE;
   gint text_column = -1;
-  gchar *ascii_prefix;
-  gint prefix_len;
+  gchar *ascii_prefix = 0;
+  gint prefix_len = 0;
   gboolean found_suggestion = FALSE;
 
   entry = GTK_ENTRY (editable);

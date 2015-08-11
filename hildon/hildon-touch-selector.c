@@ -190,7 +190,7 @@
 #define HILDON_TOUCH_SELECTOR_GET_PRIVATE(obj)                          \
   (G_TYPE_INSTANCE_GET_PRIVATE ((obj), HILDON_TYPE_TOUCH_SELECTOR, HildonTouchSelectorPrivate))
 
-G_DEFINE_TYPE (HildonTouchSelector, hildon_touch_selector, GTK_TYPE_VBOX)
+G_DEFINE_TYPE (HildonTouchSelector, hildon_touch_selector, GTK_TYPE_BOX)
 
 /*
  * IMPLEMENTATION NOTES:
@@ -271,9 +271,9 @@ hildon_touch_selector_get_preferred_height      (GtkWidget *widget,
 static void hildon_touch_selector_remove        (GtkContainer * container,
                                                  GtkWidget * widget);
 /* private functions */
-static void _row_tapped_cb                      (GtkTreeView * tree_view,
-                                                 GtkTreePath * path,
-                                                 gpointer user_data);
+//static void _row_tapped_cb                      (GtkTreeView * tree_view,
+//                                                 GtkTreePath * path,
+//                                                 gpointer user_data);
 static void
 hildon_touch_selector_row_activated_cb          (GtkTreeView       *tree_view,
                                                  GtkTreePath       *path,
@@ -446,10 +446,10 @@ hildon_touch_selector_class_init (HildonTouchSelectorClass * class)
   /* style properties */
   /* We need to ensure fremantle mode for the treeview in order to work
      properly. This is not about the appearance, this is about behaviour */
-  gtk_rc_parse_string ("style \"fremantle-htst\" {\n"
-                       "  GtkWidget::hildon-mode = 1\n"
-                       "} widget \"*.fremantle-htst\" style \"fremantle-htst\""
-                       "widget_class \"*<HildonPannableArea>.GtkTreeView\" style :highest \"fremantle-htst\"");
+//  gtk_rc_parse_string ("style \"fremantle-htst\" {\n"
+//                       "  GtkWidget::hildon-mode = 1\n"
+//                       "} widget \"*.fremantle-htst\" style \"fremantle-htst\""
+//                       "widget_class \"*<HildonPannableArea>.GtkTreeView\" style :highest \"fremantle-htst\"");
 
   g_type_class_add_private (class, sizeof (HildonTouchSelectorPrivate));
 }
@@ -515,7 +515,7 @@ hildon_touch_selector_init (HildonTouchSelector * selector)
   selector->priv->print_user_data = NULL;
   selector->priv->print_destroy_func = NULL;
   selector->priv->initial_scroll = TRUE;
-  selector->priv->hbox = gtk_hbox_new (FALSE, 0);
+  selector->priv->hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 
   selector->priv->changed_blocked = FALSE;
 
@@ -776,7 +776,7 @@ hildon_touch_selector_row_activated_cb          (GtkTreeView       *tree_view,
   gtk_tree_path_free (child_path);
 }
 
-static void
+/*static void
 _row_tapped_cb (GtkTreeView * tree_view, GtkTreePath * path, gpointer user_data)
 {
   HildonTouchSelector *selector = NULL;
@@ -791,7 +791,7 @@ _row_tapped_cb (GtkTreeView * tree_view, GtkTreePath * path, gpointer user_data)
   num_column = g_slist_index (selector->priv->columns, column);
 
   hildon_touch_selector_emit_value_changed (selector, num_column);
-}
+}*/
 
 
 static HildonTouchSelectorColumn *
@@ -834,14 +834,15 @@ _create_new_column (HildonTouchSelector * selector,
                     G_CALLBACK (on_row_changed), selector);
   g_signal_connect_after (model, "row-deleted",
                           G_CALLBACK (on_row_deleted), selector);
-  gtk_tree_view_set_rules_hint (tv, TRUE);
+  //gtk_tree_view_set_rules_hint (tv, TRUE); > This is now theme defined.
 
   gtk_tree_view_append_column (GTK_TREE_VIEW (tv), tree_column);
 
   new_column = g_object_new (HILDON_TYPE_TOUCH_SELECTOR_COLUMN, NULL);
   new_column->priv->parent = selector;
 
-  panarea = hildon_pannable_area_new ();
+  //panarea = hildon_pannable_area_new ();
+  panarea = gtk_scrolled_window_new (NULL, NULL);
 
   gtk_container_add (GTK_CONTAINER (panarea), GTK_WIDGET (tv));
 
@@ -863,8 +864,8 @@ _create_new_column (HildonTouchSelector * selector,
   }
 
   /* connect to the hildon-row-tapped signal connection */
-  g_signal_connect (G_OBJECT (tv), "hildon-row-tapped",
-                    G_CALLBACK (_row_tapped_cb), new_column);
+//  g_signal_connect (G_OBJECT (tv), "hildon-row-tapped",
+//                    G_CALLBACK (_row_tapped_cb), new_column);
 
   g_signal_connect (G_OBJECT (tv), "row-activated",
                     G_CALLBACK (hildon_touch_selector_row_activated_cb), new_column);
@@ -1501,7 +1502,7 @@ hildon_touch_selector_append_column (HildonTouchSelector * selector,
     selector->priv->columns = g_slist_append (selector->priv->columns,
                                               new_column);
 
-    new_column->priv->vbox = gtk_vbox_new (FALSE, 0);
+    new_column->priv->vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start (GTK_BOX (new_column->priv->vbox),
                         new_column->priv->panarea,
                         TRUE, TRUE, 0);
@@ -2315,7 +2316,8 @@ hildon_touch_selector_get_current_text (HildonTouchSelector * selector)
 }
 
 static void
-search_nearest_element (HildonPannableArea *panarea,
+//search_nearest_element (HildonPannableArea *panarea,
+search_nearest_element (GtkScrolledWindow *panarea,
                         GtkTreeView *tv,
                         GList *selected_rows,
                         GtkTreePath **nearest_path)
@@ -2337,7 +2339,8 @@ search_nearest_element (HildonPannableArea *panarea,
     return;
   }
 
-  adj = hildon_pannable_area_get_vadjustment (panarea);
+//  adj = hildon_pannable_area_get_vadjustment (panarea);
+  adj = gtk_scrolled_window_get_vadjustment (panarea);
   g_return_if_fail (adj != NULL);
 
   /* we add this in order to check the nearest to the center of
@@ -2380,8 +2383,8 @@ on_realize_cb                                  (GtkWidget *widget,
       (GTK_TREE_VIEW (column->priv->tree_view),
        0, rect.y, NULL, &y);
 
-    hildon_pannable_area_scroll_to (HILDON_PANNABLE_AREA (column->priv->panarea),
-                                    -1, y);
+//    hildon_pannable_area_scroll_to (HILDON_PANNABLE_AREA (column->priv->panarea),
+//                                    -1, y);
 
     gtk_tree_path_free (column->priv->initial_path);
 
@@ -2409,8 +2412,8 @@ hildon_touch_selector_scroll_to (HildonTouchSelectorColumn *column,
     gtk_tree_view_convert_bin_window_to_tree_coords (tv,
                                                      0, rect.y, NULL, &y);
 
-    hildon_pannable_area_scroll_to (HILDON_PANNABLE_AREA
-                                    (column->priv->panarea), -1, y);
+//    hildon_pannable_area_scroll_to (HILDON_PANNABLE_AREA
+//                                    (column->priv->panarea), -1, y);
   } else {
     if (column->priv->realize_handler != 0) {
 
@@ -2451,7 +2454,8 @@ _hildon_touch_selector_center_on_selected_items (HildonTouchSelector *selector,
 
   selected_rows = hildon_touch_selector_get_selected_rows (selector, num_column);
   if (selected_rows) {
-    search_nearest_element (HILDON_PANNABLE_AREA (column->priv->panarea),
+//    search_nearest_element (HILDON_PANNABLE_AREA (column->priv->panarea),
+    search_nearest_element (GTK_SCROLLED_WINDOW (column->priv->panarea),
                              GTK_TREE_VIEW (column->priv->tree_view),
                              selected_rows,
                              &path);

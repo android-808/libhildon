@@ -53,12 +53,12 @@ static ca_context *hildon_ca_context_get (void);
 static ca_context *
 hildon_ca_context_get (void)
 {
-    static GStaticPrivate context_private = G_STATIC_PRIVATE_INIT;
+    static GPrivate context_private = G_PRIVATE_INIT((GDestroyNotify)ca_context_destroy);
     ca_context *c = NULL;
     const gchar *name = NULL;
     gint ret;
 
-    if ((c = g_static_private_get(&context_private)))
+    if ((c = g_private_get(&context_private)))
         return c;
 
     if ((ret = ca_context_create(&c)) != CA_SUCCESS) {
@@ -74,7 +74,7 @@ hildon_ca_context_get (void)
     if ((name = g_get_application_name()))
         ca_context_change_props(c, CA_PROP_APPLICATION_NAME, name, NULL);
 
-    g_static_private_set(&context_private, c, (GDestroyNotify) ca_context_destroy);
+    g_private_set(&context_private, c);
 
     return c;
 }

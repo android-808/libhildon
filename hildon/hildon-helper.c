@@ -54,7 +54,7 @@ struct                                          _HildonLogicalElement
 {
     gboolean is_color;                          /* If FALSE, it's a logical font def */
     GtkRcFlags rc_flags;
-    GtkStateType state;
+    GtkStateFlags state;
     gchar *logical_color_name;
     gchar *logical_font_name;
 } typedef                                       HildonLogicalElement;
@@ -142,8 +142,8 @@ attach_new_font_element                         (GtkWidget *widget,
 
 static GSList*
 attach_new_color_element                        (GtkWidget *widget, 
-                                                 GtkRcFlags flags, 
-                                                 GtkStateType state, 
+                                                 GtkRcFlags flags,
+                                                 GtkStateFlags state,
                                                  const gchar *color_name)
 {
     GSList *style_list = g_object_get_qdata (G_OBJECT (widget), hildon_helper_logical_data_quark ());
@@ -177,7 +177,7 @@ attach_new_color_element                        (GtkWidget *widget,
 
 static void 
 hildon_change_style_recursive_from_list         (GtkWidget *widget, 
-                                                 GtkStyle *prev_style, 
+                                                 GtkStyleContext *prev_style, 
                                                  GSList *list)
 {
     g_assert (GTK_IS_WIDGET (widget));
@@ -204,7 +204,7 @@ hildon_change_style_recursive_from_list         (GtkWidget *widget,
 
     G_GNUC_EXTENSION
         g_signal_handlers_block_matched (G_OBJECT (widget), G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_FUNC,
-                g_signal_lookup ("style_set", G_TYPE_FROM_INSTANCE (widget)),
+                g_signal_lookup ("style_updated", G_TYPE_FROM_INSTANCE (widget)),
                 0, NULL,
                 (gpointer) hildon_change_style_recursive_from_list,
                 NULL);
@@ -218,43 +218,63 @@ hildon_change_style_recursive_from_list         (GtkWidget *widget,
         HildonLogicalElement *element = (HildonLogicalElement *) iterator->data;
 
         if (element->is_color == TRUE) {
-            GtkStyle *style;
+            GtkStyleContext *style;
             /* Changing logical color */
-            GdkColor color;
-            gtk_widget_ensure_style (widget);
-            g_object_get (widget, "style", &style, NULL);
-            if (gtk_style_lookup_color (style, element->logical_color_name, &color) == TRUE) {
+            GdkRGBA color;
+            style = gtk_widget_get_style_context (widget);
+            if (gtk_style_context_lookup_color (style, element->logical_color_name, &color) == TRUE) {
 
                 switch (element->rc_flags)
                 {
                     case GTK_RC_FG:
-                        gtk_widget_modify_fg (widget, element->state, &color);
+                         gtk_widget_override_color (widget, element->state, &color);
                         break;
 
                     case GTK_RC_BG:
-                        gtk_widget_modify_bg (widget, element->state, &color);
+                        gtk_widget_override_background_color (widget, element->state, &color);
                         break;
 
                     case GTK_RC_TEXT:
-                        gtk_widget_modify_text (widget, element->state, &color);
+                         gtk_widget_override_color (widget, element->state, &color);
                         break;
 
                     case GTK_RC_BASE:
-                        gtk_widget_modify_base (widget, element->state, &color);
+                        gtk_widget_override_background_color (widget, element->state, &color);
                         break;
                 }
             }
-            g_object_unref (style);
         } else {
             
             /* Changing logical font */
-            GtkStyle *font_style = gtk_rc_get_style_by_paths (gtk_settings_get_default (), element->logical_font_name, NULL, G_TYPE_NONE);
-            if (font_style != NULL) {
-                PangoFontDescription *font_desc = font_style->font_desc;
+            //GtkStyle *font_style = gtk_rc_get_style_by_paths (gtk_settings_get_default (), element->logical_font_name, NULL, G_TYPE_NONE);
+/* FIX THIS:
+https://mail.gnome.org/archives/commits-list/2015-February/msg03002.html
+https://mail.gnome.org/archives/commits-list/2011-January/msg05922.html*/
 
-                if (font_desc != NULL)
-                    gtk_widget_modify_font (widget, font_desc);
-            }
+            gchar *css;
+            GtkCssProvider *css_provider;
+
+            css = g_strconcat("GtkWidget {font:", element->logical_font_name, "}", NULL);
+
+            css_provider = gtk_css_provider_new();
+            gtk_css_provider_load_from_data(css_provider, css, -1, NULL);
+            g_free(css);
+            gtk_style_context_add_provider(gtk_widget_get_style_context(widget) ,
+                                           GTK_STYLE_PROVIDER(css_provider),
+                                           GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+            g_object_unref(css_provider);
+
+            /*GtkStyleContext *font_style = gtk_style_context_new ();
+            //gtk_style_context_set_path (font_style, element->logical_font_name);
+            if (font_style != NULL) {
+                PangoFontDescription *font_desc = 0;
+                gtk_style_context_get (font_style, gtk_widget_get_state_flags (widget), "font", &font_desc, NULL);
+
+                if (font_desc != NULL) {
+                    gtk_widget_override_font (widget, font_desc);
+                    pango_font_description_free (font_desc);
+                }
+            }*/
         }
 
         iterator = iterator->next;
@@ -264,7 +284,7 @@ hildon_change_style_recursive_from_list         (GtkWidget *widget,
 
     G_GNUC_EXTENSION
         g_signal_handlers_unblock_matched (G_OBJECT (widget), G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_FUNC,
-                g_signal_lookup ("style_set", G_TYPE_FROM_INSTANCE (widget)),
+                g_signal_lookup ("style_updated", G_TYPE_FROM_INSTANCE (widget)),
                 0, NULL,
                 (gpointer) hildon_change_style_recursive_from_list,
                 NULL);
@@ -464,7 +484,8 @@ hildon_format_file_size_for_display             (goffset size)
 static gunichar
 stripped_char (gunichar ch)
 {
-  gunichar *decomp, retval;
+  gunichar decomp[4];
+  gunichar retval;
   GUnicodeType utype;
   gsize dlen;
 
@@ -482,9 +503,8 @@ stripped_char (gunichar ch)
     /* Convert to lowercase, fall through */
     ch = g_unichar_tolower (ch);
   case G_UNICODE_LOWERCASE_LETTER:
-    if ((decomp = g_unicode_canonical_decomposition (ch, &dlen))) {
+    if ((dlen = g_unichar_fully_decompose (ch, FALSE, decomp, 4))) {
       retval = decomp[0];
-      g_free (decomp);
       return retval;
     }
     break;

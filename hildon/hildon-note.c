@@ -398,13 +398,12 @@ hildon_note_init                                (HildonNote *dialog)
     gtk_label_set_justify (GTK_LABEL (priv->label), GTK_JUSTIFY_LEFT);
 
     priv->event_box = gtk_event_box_new ();
+    gtk_widget_set_halign (priv->event_box, 0.5);
+    gtk_widget_set_valign (priv->event_box, 0.5);
     priv->icon = NULL;
     priv->stock_icon = NULL;
     priv->idle_handler = 0;
-    priv->align = gtk_alignment_new (0.5, 0.5, 1.0, 1.0);
-
-    gtk_container_add (GTK_CONTAINER (priv->event_box), priv->align);
-
+    
     gtk_event_box_set_visible_window (GTK_EVENT_BOX (priv->event_box), FALSE);
     gtk_event_box_set_above_child (GTK_EVENT_BOX (priv->event_box), TRUE);
     g_signal_connect (priv->event_box, "button-press-event",
@@ -477,44 +476,44 @@ label_size_request                              (GtkWidget      *label,
     g_object_set (note, "height-request", note_height, NULL);
 }
 
-static void
-resize_button (GtkWidget *button, gpointer *data)
-{
-    gint width = GPOINTER_TO_INT (data);
-    g_object_set (button, "width-request", width, NULL);
-}
+//static void
+//resize_button (GtkWidget *button, gpointer *data)
+//{
+//    gint width = GPOINTER_TO_INT (data);
+//    g_object_set (button, "width-request", width, NULL);
+//}
 
 static void
 hildon_note_orientation_update (HildonNote *note, GdkScreen *screen)
 {
-    GtkDialog *dialog = GTK_DIALOG (note);
-    HildonNotePrivate* priv = HILDON_NOTE_GET_PRIVATE (note);
-    GtkWidget *parent;
-    gint button_width, padding;
+//    GtkDialog *dialog = GTK_DIALOG (note);
+//    HildonNotePrivate* priv = HILDON_NOTE_GET_PRIVATE (note);
+//    GtkWidget *parent;
+//    gint button_width, padding;
     gboolean portrait = gdk_screen_get_width (screen) < gdk_screen_get_height (screen);
 
-    g_object_ref (gtk_dialog_get_action_area (dialog));
-    unpack_widget (gtk_dialog_get_action_area (dialog));
+//    g_object_ref (gtk_dialog_get_action_area (dialog));
+//    unpack_widget (gtk_dialog_get_action_area (dialog));
 
     if (portrait) {
-        parent = gtk_dialog_get_content_area (dialog);
-        button_width = gdk_screen_get_width (screen) - HILDON_MARGIN_DOUBLE * 2;
-        padding = HILDON_MARGIN_DOUBLE;
+//        parent = gtk_dialog_get_content_area (dialog);
+//        button_width = gdk_screen_get_width (screen) - HILDON_MARGIN_DOUBLE * 2;
+//        padding = HILDON_MARGIN_DOUBLE;
     } else {
-        parent = gtk_widget_get_parent (gtk_dialog_get_content_area (dialog));
-        button_width = priv->button_width;
-        padding = 0;
+//        parent = gtk_widget_get_parent (gtk_dialog_get_content_area (dialog));
+//        button_width = priv->button_width;
+//        padding = 0;
     }
 
-    gtk_box_pack_end (GTK_BOX (parent), gtk_dialog_get_action_area (dialog),
-                      portrait, TRUE, 0);
-    gtk_box_reorder_child (GTK_BOX (parent), gtk_dialog_get_action_area (dialog), 0);
-    gtk_container_foreach (GTK_CONTAINER (gtk_dialog_get_action_area (dialog)),
-                           (GtkCallback) resize_button,
-                           GINT_TO_POINTER (button_width));
-    g_object_unref (gtk_dialog_get_action_area (dialog));
-    gtk_container_child_set (GTK_CONTAINER (priv->box), priv->label,
-                             "padding", padding, NULL);
+//    gtk_box_pack_end (GTK_BOX (parent), gtk_dialog_get_action_area (dialog),
+//                      portrait, TRUE, 0);
+//    gtk_box_reorder_child (GTK_BOX (parent), gtk_dialog_get_action_area (dialog), 0);
+//    gtk_container_foreach (GTK_CONTAINER (gtk_dialog_get_action_area (dialog)),
+//                           (GtkCallback) resize_button,
+//                           GINT_TO_POINTER (button_width));
+//    g_object_unref (gtk_dialog_get_action_area (dialog));
+//    gtk_container_child_set (GTK_CONTAINER (priv->box), priv->label,
+//                             "padding", padding, NULL);
 }
 
 static void
@@ -647,7 +646,7 @@ hildon_note_rebuild                             (HildonNote *note)
 {
     GtkDialog *dialog;
     HildonNotePrivate *priv;
-    gboolean is_info_note = FALSE;
+//    gboolean is_info_note = FALSE;
 
     g_assert (HILDON_IS_NOTE (note));
 
@@ -697,7 +696,7 @@ hildon_note_rebuild                             (HildonNote *note)
             break;
 
         case HILDON_NOTE_TYPE_INFORMATION:
-            is_info_note = TRUE;
+            //is_info_note = TRUE;
             break;
 
         case HILDON_NOTE_TYPE_CONFIRMATION_BUTTON:
@@ -709,26 +708,27 @@ hildon_note_rebuild                             (HildonNote *note)
      * note. This prevents text from being slightly aligned to the
      * left
      */
-    if (is_info_note) {
-        gtk_widget_hide (gtk_dialog_get_action_area (dialog));
-    } else {
-        gtk_widget_show (gtk_dialog_get_action_area (dialog));
-    }
-    gtk_widget_set_no_show_all (gtk_dialog_get_action_area (dialog), is_info_note);
+//    if (is_info_note) {
+//        gtk_widget_hide (gtk_dialog_get_action_area (dialog));
+//    } else {
+//        gtk_widget_show (gtk_dialog_get_action_area (dialog));
+//    }
+//    gtk_widget_set_no_show_all (gtk_dialog_get_action_area (dialog), is_info_note);
 
     /* Pack label vertically. Spacing is only necessary for the progressbar note. */
-    priv->box = gtk_vbox_new (FALSE, 0);
-    gtk_container_add (GTK_CONTAINER (priv->align), priv->box);
+    priv->box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_add (GTK_CONTAINER (priv->event_box), priv->box);
     gtk_box_pack_start (GTK_BOX (priv->box), priv->label, TRUE, TRUE, 0);
 
     if (priv->progressbar) {
-        gtk_misc_set_alignment (GTK_MISC (priv->label), 0.0, 0.5);
-        gtk_alignment_set_padding (GTK_ALIGNMENT (priv->align),
-                                   HILDON_MARGIN_DOUBLE, 0, 0, 0);
+        gtk_widget_set_halign(priv->label, GTK_ALIGN_START);
+        gtk_widget_set_valign(priv->label, GTK_ALIGN_FILL);
+        gtk_widget_set_margin_top (priv->event_box, HILDON_MARGIN_DOUBLE);
         gtk_box_pack_start (GTK_BOX (priv->box), priv->progressbar, FALSE, FALSE, 0);
     } else {
-        gtk_misc_set_alignment (GTK_MISC (priv->label), 0.5, 0.5);
-        gtk_alignment_set_padding (GTK_ALIGNMENT (priv->align), 0, 0, 0, 0);
+        gtk_widget_set_halign(priv->label, GTK_ALIGN_FILL);
+        gtk_widget_set_valign(priv->label, GTK_ALIGN_FILL);
+        gtk_widget_set_margin_top (priv->event_box, 0);
     }
 
     gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (dialog)), priv->event_box);

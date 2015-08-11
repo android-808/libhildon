@@ -63,7 +63,7 @@ G_BEGIN_DECLS
  *
  * Since: 2.2
  */
-#define HILDON_ICON_SIZE_XSMALL                  gtk_icon_size_from_name ("hildon-xsmall")
+#define HILDON_ICON_SIZE_XSMALL                  16
 
 /**
  * HILDON_ICON_SIZE_SMALL:
@@ -72,7 +72,7 @@ G_BEGIN_DECLS
  *
  * Since: 2.2
  */
-#define HILDON_ICON_SIZE_SMALL                   gtk_icon_size_from_name ("hildon-small")
+#define HILDON_ICON_SIZE_SMALL                   24
 
 /**
  * HILDON_ICON_SIZE_STYLUS:
@@ -81,7 +81,7 @@ G_BEGIN_DECLS
  *
  * Since: 2.2
  */
-#define HILDON_ICON_SIZE_STYLUS                  gtk_icon_size_from_name ("hildon-stylus")
+#define HILDON_ICON_SIZE_STYLUS                  32
 
 /**
  * HILDON_ICON_SIZE_FINGER:
@@ -90,7 +90,7 @@ G_BEGIN_DECLS
  *
  * Since: 2.2
  */
-#define HILDON_ICON_SIZE_FINGER                  gtk_icon_size_from_name ("hildon-finger")
+#define HILDON_ICON_SIZE_FINGER                  48
 
 /**
  * HILDON_ICON_SIZE_THUMB:
@@ -99,7 +99,7 @@ G_BEGIN_DECLS
  *
  * Since: 2.2
  */
-#define HILDON_ICON_SIZE_THUMB                   gtk_icon_size_from_name ("hildon-thumb")
+#define HILDON_ICON_SIZE_THUMB                   64
 
 /**
  * HILDON_ICON_SIZE_LARGE:
@@ -108,7 +108,7 @@ G_BEGIN_DECLS
  *
  * Since: 2.2
  */
-#define HILDON_ICON_SIZE_LARGE                   gtk_icon_size_from_name ("hildon-large")
+#define HILDON_ICON_SIZE_LARGE                   96
 
 /**
  * HILDON_ICON_SIZE_XLARGE:
@@ -117,7 +117,7 @@ G_BEGIN_DECLS
  *
  * Since: 2.2
  */
-#define HILDON_ICON_SIZE_XLARGE                  gtk_icon_size_from_name ("hildon-xlarge")
+#define HILDON_ICON_SIZE_XLARGE                  128
 
 /* Actual icon sizes */
 

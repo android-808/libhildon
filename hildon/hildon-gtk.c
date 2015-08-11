@@ -450,7 +450,7 @@ hildon_gtk_window_take_screenshot_sync          (GtkWindow *window,
 GtkWidget*
 hildon_gtk_hscale_new                           (void)
 {
-  GtkWidget *scale = gtk_hscale_new_with_range (0.0, 1.0, 0.1);
+  GtkWidget *scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 1.0, 0.1);
   g_object_set (scale, "draw-value", FALSE, NULL);
 
   return scale;
@@ -474,7 +474,7 @@ hildon_gtk_hscale_new                           (void)
 GtkWidget*
 hildon_gtk_vscale_new                           (void)
 {
-  GtkWidget *scale = gtk_vscale_new_with_range (0.0, 1.0, 0.1);
+  GtkWidget *scale = gtk_scale_new_with_range (GTK_ORIENTATION_VERTICAL, 0.0, 1.0, 0.1);
   g_object_set (scale, "draw-value", FALSE, NULL);
 
   return scale;

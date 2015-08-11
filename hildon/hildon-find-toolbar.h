@@ -54,12 +54,14 @@ G_BEGIN_DECLS
                                                 HildonFindToolbarClass))
 
 typedef struct                                  _HildonFindToolbar HildonFindToolbar;
-
+typedef struct                                  _HildonFindToolbarPrivate HildonFindToolbarPrivate;
 typedef struct                                  _HildonFindToolbarClass HildonFindToolbarClass;
 
 struct _HildonFindToolbar
 {
   GtkToolbar parent;
+
+  HildonFindToolbarPrivate *priv;
 };
 
 struct _HildonFindToolbarClass
@@ -72,13 +74,13 @@ struct _HildonFindToolbarClass
   gboolean (*history_append) (HildonFindToolbar *tooblar);
 };
 
-GType G_GNUC_CONST
-hildon_find_toolbar_get_type                    (void);
+GType 
+hildon_find_toolbar_get_type                    (void) G_GNUC_CONST;
 
-GtkWidget*      
+HildonFindToolbar*      
 hildon_find_toolbar_new                         (const gchar *label);
 
-GtkWidget*      
+HildonFindToolbar*      
 hildon_find_toolbar_new_with_model              (const gchar *label,
                                                  GtkListStore* model,
                                                  gint column);

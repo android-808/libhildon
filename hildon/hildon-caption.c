@@ -544,7 +544,7 @@ hildon_caption_init                             (HildonCaption *caption)
     gtk_widget_push_composite_child();
 
     /* Create caption text */
-    priv->caption_area = gtk_hbox_new (FALSE, HILDON_CAPTION_SPACING); 
+    priv->caption_area = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, HILDON_CAPTION_SPACING); 
     priv->label = gtk_label_new (NULL);
     priv->icon_align = gtk_alignment_new (0.5f, 0.5f, 0.0f, 0.0f);
     priv->icon_position = HILDON_CAPTION_POSITION_RIGHT;
@@ -706,10 +706,10 @@ hildon_caption_size_allocate                    (GtkWidget *widget,
 
     child = gtk_bin_get_child (GTK_BIN (widget));
     if (child)
-        gtk_widget_get_child_requisition (child, &child_req);
+        gtk_widget_get_preferred_size (child, &child_req, NULL);
 
     gtk_widget_size_allocate (widget, allocation);
-    gtk_widget_get_child_requisition (priv->caption_area, &req);
+    gtk_widget_get_preferred_size (priv->caption_area, &req, NULL);
 
     child_alloc.height = caption_alloc.height = allocation->height;
     child_alloc.width  = caption_alloc.width  = allocation->width;

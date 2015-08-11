@@ -174,7 +174,7 @@ hildon_window_stack_get_leader_window           (HildonWindowStack *stack,
             GdkWindow *root;
 
             /* Create a new X Window group. */
-            root = gtk_widget_get_root_window (win);
+            root = gdk_screen_get_root_window (gtk_widget_get_screen (win));
             stack->priv->leader = gdk_window_new (root, &attr, GDK_WA_X | GDK_WA_Y);
         }
     }

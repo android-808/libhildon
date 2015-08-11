@@ -106,14 +106,14 @@ hildon_init (void)
     initialized = TRUE;
   }
 
-  /* Register icon sizes */
-  gtk_icon_size_register ("hildon-xsmall", 16, 16);
-  gtk_icon_size_register ("hildon-small", 24, 24);
-  gtk_icon_size_register ("hildon-stylus", 32, 32);
-  gtk_icon_size_register ("hildon-finger", 48, 48);
-  gtk_icon_size_register ("hildon-thumb", 64, 64);
-  gtk_icon_size_register ("hildon-large", 96, 96);
-  gtk_icon_size_register ("hildon-xlarge", 128, 128);
+  /* Register icon sizes - DEPRECIATED! */
+  //gtk_icon_size_register ("hildon-xsmall", 16, 16);
+  //gtk_icon_size_register ("hildon-small", 24, 24);
+  //gtk_icon_size_register ("hildon-stylus", 32, 32);
+  //gtk_icon_size_register ("hildon-finger", 48, 48);
+  //gtk_icon_size_register ("hildon-thumb", 64, 64);
+  //gtk_icon_size_register ("hildon-large", 96, 96);
+  //gtk_icon_size_register ("hildon-xlarge", 128, 128);
 
   /* Add Hildon stock items */
   gtk_stock_add_static (hildon_items, G_N_ELEMENTS (hildon_items));

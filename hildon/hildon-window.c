@@ -86,6 +86,7 @@
 #include                                        <X11/Xatom.h>
 #include                                        <gdk/gdkkeysyms.h>
 #include                                        <gdk/gdkx.h>
+#include                                        <gtk/gtk.h>
 
 #include                                        "hildon-window.h"
 #include                                        "hildon-window-private.h"
@@ -335,7 +336,8 @@ hildon_window_init                              (HildonWindow *self)
     HildonWindowPrivate *priv = HILDON_WINDOW_GET_PRIVATE (self);
     g_assert (priv != NULL);
 
-    priv->vbox = gtk_vbox_new (TRUE, TOOLBAR_MIDDLE);
+    priv->vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, TOOLBAR_MIDDLE);
+    gtk_box_set_homogeneous(GTK_BOX(priv->vbox), FALSE);
     gtk_widget_set_parent (priv->vbox, GTK_WIDGET(self));
     priv->menu = NULL;
     priv->app_menu = NULL;
@@ -727,8 +729,8 @@ hildon_window_size_allocate                     (GtkWidget *widget,
     /* Calculate allocation of edit toolbar */
     if (priv->edit_toolbar != NULL && gtk_widget_get_visible (priv->edit_toolbar))
     {
-        GtkRequisition req;
-        gtk_widget_get_child_requisition (priv->edit_toolbar, &req);
+	GtkRequisition req;
+        gtk_widget_get_preferred_size (priv->edit_toolbar, &req, NULL);
         edittb_alloc.width = alloc.width - tb->left - tb->right;
         edittb_alloc.height = MIN (req.height, alloc.height);
         edittb_alloc.x = alloc.x + tb->left;
@@ -746,12 +748,11 @@ hildon_window_size_allocate                     (GtkWidget *widget,
     if (priv->vbox != NULL && gtk_widget_get_visible (priv->vbox))
     {
         GtkRequisition req;
-        gtk_widget_get_child_requisition (priv->vbox, &req);
+        gtk_widget_get_preferred_size (priv->vbox, &req, NULL);
         box_alloc.width = alloc.width - tb->left - tb->right;
         box_alloc.height = MIN (req.height, alloc.height);
         box_alloc.x = alloc.x + tb->left;
         box_alloc.y = alloc.y + alloc.height - box_alloc.height - tb->bottom;
-
         if (box_alloc.height > 0)
         {
             alloc.height -= tb->top + tb->bottom + box_alloc.height;
@@ -952,7 +953,6 @@ paint_toolbar                                   (GtkWidget *widget,
 {
     gint toolbar_num = 0; 
     gint count;
-    GtkAllocation *box_allocation = NULL;
 
     /* collect info to help on painting the boxes */
     g_list_foreach (gtk_container_get_children (GTK_CONTAINER (box)),
@@ -961,18 +961,16 @@ paint_toolbar                                   (GtkWidget *widget,
     if(toolbar_num <= 0)
         return;
 
-    gtk_widget_get_allocation (GTK_WIDGET (box), box_allocation);
-
     /*top most toolbar painting*/
     gtk_render_frame (gtk_widget_get_style_context (widget), cr,
-                      0, box_allocation->y,
+                      0, gtk_widget_get_allocated_height (GTK_WIDGET(box)),
                       gtk_widget_get_allocated_width (widget), TOOLBAR_HEIGHT);
 
     /*multi toolbar painting*/
     for (count = 0; count < toolbar_num - 1; count++)
     {
         gtk_render_frame (gtk_widget_get_style_context (widget), cr,
-                          0, box_allocation->y +
+                          0, gtk_widget_get_allocated_height (GTK_WIDGET(box)) +
                           (1 + count) * (TOOLBAR_HEIGHT),
                           gtk_widget_get_allocated_width (widget), TOOLBAR_HEIGHT);
     }
@@ -1653,7 +1651,7 @@ hildon_window_add_with_scrollbar                (HildonWindow *self,
         if (GTK_IS_CONTAINER (child) )
             gtk_container_set_focus_vadjustment (GTK_CONTAINER (child),
                     gtk_scrolled_window_get_vadjustment (scrolledw) );
-        gtk_scrolled_window_add_with_viewport (scrolledw, child);
+        gtk_container_add(GTK_CONTAINER(scrolledw), child);
     }
 
     gtk_container_add (GTK_CONTAINER (self), GTK_WIDGET (scrolledw));
@@ -1710,6 +1708,7 @@ hildon_window_add_toolbar                       (HildonWindow *self,
     priv = HILDON_WINDOW_GET_PRIVATE (self);
 
     vbox = GTK_BOX (priv->vbox);
+    g_assert (vbox != NULL);
 
     gtk_box_pack_start (vbox, GTK_WIDGET (toolbar), TRUE, TRUE, 0);
     gtk_box_reorder_child (vbox, GTK_WIDGET (toolbar), 0);

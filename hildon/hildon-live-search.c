@@ -798,7 +798,8 @@ hildon_live_search_init                         (HildonLiveSearch *self)
     entry_container = gtk_tool_item_new ();
     gtk_tool_item_set_expand (entry_container, TRUE);
 
-    entry_hbox = gtk_hbox_new (FALSE, 0);
+    entry_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_set_homogeneous(GTK_BOX(entry_hbox), FALSE);
     gtk_container_add (GTK_CONTAINER (entry_container), entry_hbox);
 
     priv->entry = hildon_entry_new (HILDON_SIZE_FINGER_HEIGHT);
@@ -814,7 +815,8 @@ hildon_live_search_init                         (HildonLiveSearch *self)
 
     close = gtk_image_new_from_icon_name ("general_close",
                                           HILDON_ICON_SIZE_FINGER);
-    gtk_misc_set_padding (GTK_MISC (close), 0, 0);
+    gtk_widget_set_halign (close, GTK_ALIGN_START);
+    gtk_widget_set_valign (close, GTK_ALIGN_START);
     close_button = gtk_tool_button_new (close, NULL);
     gtk_widget_set_can_focus (GTK_WIDGET (close_button), FALSE);
 

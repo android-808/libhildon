@@ -78,7 +78,7 @@ hildon_date_button_constructor (GType type,
   object = G_OBJECT_CLASS (hildon_date_button_parent_class)->constructor (type,
                                                                           n_construct_params,
                                                                           construct_params);
-  gtk_button_set_use_stock (GTK_BUTTON (object), TRUE);
+//  gtk_button_set_use_stock (GTK_BUTTON (object), TRUE);
 
   return object;
 }

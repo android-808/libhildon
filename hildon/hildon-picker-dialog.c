@@ -671,9 +671,9 @@ static void
 prepare_action_area (HildonPickerDialog *dialog)
 {
   if (requires_done_button (dialog)) {
-    gtk_widget_show (gtk_dialog_get_action_area (GTK_DIALOG (dialog)));
+//    gtk_widget_show (gtk_dialog_get_action_area (GTK_DIALOG (dialog)));
   } else {
-    gtk_widget_hide (gtk_dialog_get_action_area (GTK_DIALOG (dialog)));
+//    gtk_widget_hide (gtk_dialog_get_action_area (GTK_DIALOG (dialog)));
   }
 }
 

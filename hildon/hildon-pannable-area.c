@@ -66,9 +66,9 @@
 #define MIN_ACCEL_THRESHOLD 40
 #define FAST_CLICK 125
 
-G_DEFINE_TYPE (HildonPannableArea, hildon_pannable_area, GTK_TYPE_BIN)
+//G_DEFINE_TYPE (HildonPannableArea, hildon_pannable_area, GTK_TYPE_SCROLLED_WINDOW)
 
-#define PANNABLE_AREA_PRIVATE(o)                                \
+//#define PANNABLE_AREA_PRIVATE(o)                                \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), HILDON_TYPE_PANNABLE_AREA, \
                                 HildonPannableAreaPrivate))
 
@@ -157,6 +157,26 @@ struct _HildonPannableAreaPrivate {
   gboolean center_on_child_focus_pending;
 
   gboolean selection_movement;
+
+  // NEW from GtkAdjustment
+  gdouble lower;
+  gdouble upper;
+  gdouble vvalue;
+  gdouble hvalue;
+  gdouble step_increment;
+  gdouble page_increment;
+  gdouble page_size;
+
+  gdouble hsource;
+  gdouble htarget;
+  gdouble vsource;
+  gdouble vtarget;
+
+  guint duration;
+  gint64 start_time;
+  gint64 end_time;
+  guint tick_id;
+  GdkFrameClock *clock;
 };
 
 /*signals*/
@@ -200,6 +220,8 @@ enum {
   PROP_LAST
 };
 
+G_DEFINE_TYPE_WITH_PRIVATE (HildonPannableArea, hildon_pannable_area, GTK_TYPE_SCROLLED_WINDOW)
+
 static GtkBinClass *bin_class = NULL;
 
 static void hildon_pannable_area_class_init (HildonPannableAreaClass * klass);
@@ -229,8 +251,6 @@ static void hildon_pannable_area_child_allocate_calculate (GtkWidget * widget,
                                                            GtkAllocation * child_allocation);
 static void hildon_pannable_area_style_set (GtkWidget * widget,
                                             GtkStyle * previous_style);
-static void hildon_pannable_area_map (GtkWidget * widget);
-static void hildon_pannable_area_unmap (GtkWidget * widget);
 static void hildon_pannable_area_grab_notify (GtkWidget *widget,
                                               gboolean was_grabbed,
                                               gpointer user_data);
@@ -317,26 +337,37 @@ static void hildon_pannable_area_center_on_child_focus (HildonPannableArea *area
 
 
 static void
-hildon_pannable_area_class_init (HildonPannableAreaClass * klass)
+hildon_pannable_area_finalize (GObject *object)
 {
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
-  GtkContainerClass *container_class = GTK_CONTAINER_CLASS (klass);
+  HildonPannableArea *area = HILDON_PANNABLE_AREA (object);
+  HildonPannableAreaPrivate *priv = area->priv;
 
-  bin_class = g_type_class_peek (GTK_TYPE_BIN);
+  if (priv->tick_id)
+    g_signal_handler_disconnect (priv->clock, priv->tick_id);
+  if (priv->clock)
+    g_object_unref (priv->clock);
 
-  g_type_class_add_private (klass, sizeof (HildonPannableAreaPrivate));
+  G_OBJECT_CLASS (hildon_pannable_area_parent_class)->finalize (object);
+}
 
-  object_class->get_property = hildon_pannable_area_get_property;
-  object_class->set_property = hildon_pannable_area_set_property;
-  object_class->dispose = hildon_pannable_area_dispose;
+static void
+hildon_pannable_area_class_init (HildonPannableAreaClass * class)
+{
+  GObjectClass *gobject_class = (GObjectClass *) class;
 
+  gobject_class->finalize     = hildon_pannable_area_finalize;
+  gobject_class->dispose      = hildon_pannable_area_dispose;
+  gobject_class->set_property = hildon_pannable_area_set_property;
+  gobject_class->get_property = hildon_pannable_area_get_property;
+
+  GObjectClass *object_class = G_OBJECT_CLASS (class);
+  GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (class);
+  GtkContainerClass *container_class = GTK_CONTAINER_CLASS (class);
+
+
+  /*
   widget_class->realize = hildon_pannable_area_realize;
   widget_class->unrealize = hildon_pannable_area_unrealize;
-  widget_class->map = hildon_pannable_area_map;
-  widget_class->unmap = hildon_pannable_area_unmap;
-  widget_class->get_preferred_width = hildon_pannable_area_get_preferred_width;
-  widget_class->get_preferred_height = hildon_pannable_area_get_preferred_height;
   widget_class->size_allocate = hildon_pannable_area_size_allocate;
   widget_class->draw = hildon_pannable_area_draw;
   widget_class->style_set = hildon_pannable_area_style_set;
@@ -350,431 +381,21 @@ hildon_pannable_area_class_init (HildonPannableAreaClass * klass)
   container_class->add = hildon_pannable_area_add;
   container_class->remove = hildon_pannable_area_remove;
   container_class->set_focus_child = hildon_pannable_area_set_focus_child;
-
-  klass->horizontal_movement = NULL;
-  klass->vertical_movement = NULL;
-
-  g_object_class_install_property (object_class,
-				   PROP_ENABLED,
-				   g_param_spec_boolean ("enabled",
-							 "Enabled",
-							 "Enable or disable finger-scroll.",
-							 TRUE,
-							 G_PARAM_READWRITE |
-							 G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_VSCROLLBAR_POLICY,
-				   g_param_spec_enum ("vscrollbar_policy",
-						      "vscrollbar policy",
-						      "Visual policy of the vertical scrollbar.",
-						      GTK_TYPE_POLICY_TYPE,
-						      GTK_POLICY_AUTOMATIC,
-						      G_PARAM_READWRITE |
-						      G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_HSCROLLBAR_POLICY,
-				   g_param_spec_enum ("hscrollbar_policy",
-						      "hscrollbar policy",
-						      "Visual policy of the horizontal scrollbar.",
-						      GTK_TYPE_POLICY_TYPE,
-						      GTK_POLICY_AUTOMATIC,
-						      G_PARAM_READWRITE |
-						      G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_MODE,
-				   g_param_spec_enum ("mode",
-						      "Scroll mode",
-                                      "Changes the finger-scrolling mode among "
-                                      "push, accel and auto.",
-						      HILDON_TYPE_PANNABLE_AREA_MODE,
-						      HILDON_PANNABLE_AREA_MODE_AUTO,
-						      G_PARAM_READWRITE |
-						      G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_MOVEMENT_MODE,
-				   g_param_spec_flags ("mov_mode",
-                                                       "Scroll movement mode",
-                                                       "Controls if the widget can scroll vertically, horizontally or both.",
-                                                       HILDON_TYPE_MOVEMENT_MODE,
-                                                       HILDON_MOVEMENT_MODE_VERT,
-                                                       G_PARAM_READWRITE |
-                                                       G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_VELOCITY_MIN,
-				   g_param_spec_double ("velocity_min",
-							"Minimum scroll velocity",
-							"Minimum distance the child widget should scroll "
-							"per 'frame', in pixels per frame.",
-							0, G_MAXDOUBLE, 10,
-							G_PARAM_READWRITE |
-							G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_VELOCITY_MAX,
-				   g_param_spec_double ("velocity_max",
-							"Maximum scroll velocity",
-							"Maximum distance the child widget should scroll "
-							"per 'frame', in pixels per frame.",
-							0, G_MAXDOUBLE, 3500,
-							G_PARAM_READWRITE |
-							G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_VEL_MAX_OVERSHOOTING,
-				   g_param_spec_double ("velocity_overshooting_max",
-							"Maximum scroll velocity when overshooting",
-							"Maximum distance the child widget should scroll "
-							"per 'frame', in pixels per frame when it overshoots after hitting the edge.",
-							0, G_MAXDOUBLE, 130,
-							G_PARAM_READWRITE |
-							G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_VELOCITY_FAST_FACTOR,
-				   g_param_spec_double ("velocity_fast_factor",
-							"Fast velocity factor",
-							"Minimum velocity that is considered 'fast': "
-							"children widgets won't receive button presses. "
-							"Expressed as a fraction of the maximum velocity.",
-							0, 1, 0.01,
-							G_PARAM_READWRITE |
-							G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_DECELERATION,
-				   g_param_spec_double ("deceleration",
-							"Deceleration multiplier",
-							"The multiplier used when decelerating when in "
-							"acceleration scrolling mode.",
-							0, 1.0, 0.85,
-							G_PARAM_READWRITE |
-							G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_DRAG_INERTIA,
-				   g_param_spec_double ("drag_inertia",
-							"Inertia of the cursor dragging",
-							"Percentage of the calculated speed in each moment we are are going to use "
-                                                        "to calculate the launch speed, the other part would be the speed "
-                                                        "calculated previously.",
-							0, 1.0, 0.85,
-							G_PARAM_READWRITE |
-							G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_SPS,
-				   g_param_spec_uint ("sps",
-						      "Scrolls per second",
-						      "Amount of scroll events to generate per second.",
-						      0, G_MAXUINT, 20,
-						      G_PARAM_READWRITE |
-						      G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_PANNING_THRESHOLD,
-				   g_param_spec_uint ("panning_threshold",
-						      "Threshold to consider a motion event an scroll",
-						      "Amount of pixels to consider a motion event an scroll, if it is less "
-                                                      "it is a click detected incorrectly by the touch screen.",
-						      0, G_MAXUINT, 25,
-						      G_PARAM_READWRITE |
-						      G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_SCROLLBAR_FADE_DELAY,
-				   g_param_spec_uint ("scrollbar_fade_delay",
-						      "Time before starting to fade the scrollbar",
-						      "Time the scrollbar is going to be visible if the widget is not in "
-                                                      "action in miliseconds",
-						      0, G_MAXUINT, 1000,
-						      G_PARAM_READWRITE |
-						      G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_BOUNCE_STEPS,
-				   g_param_spec_uint ("bounce_steps",
-						      "Bounce steps",
-						      "Number of steps that is going to be used to bounce when hitting the "
-                                                      "edge, the rubberband effect depends on it",
-						      0, G_MAXUINT, 3,
-						      G_PARAM_READWRITE |
-						      G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_FORCE,
-				   g_param_spec_uint ("force",
-						      "Multiplier of the calculated speed",
-						      "Force applied to the movement, multiplies the calculated speed of the "
-                                                      "user movement the cursor in the screen",
-						      0, G_MAXUINT, 50,
-						      G_PARAM_READWRITE |
-						      G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_DIRECTION_ERROR_MARGIN,
-				   g_param_spec_uint ("direction_error_margin",
-						      "Margin in the direction detection",
-						      "After detecting the direction of the movement (horizontal or "
-                                                      "vertical), we can add this margin of error to allow the movement in "
-                                                      "the other direction even apparently it is not",
-						      0, G_MAXUINT, 10,
-						      G_PARAM_READWRITE |
-						      G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_VOVERSHOOT_MAX,
-				   g_param_spec_int ("vovershoot_max",
-                                                     "Vertical overshoot distance",
-                                                     "Space we allow the widget to pass over its vertical limits when "
-                                                     "hitting the edges, set 0 in order to deactivate overshooting.",
-                                                     0, G_MAXINT, 150,
-                                                     G_PARAM_READWRITE |
-                                                     G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_HOVERSHOOT_MAX,
-				   g_param_spec_int ("hovershoot_max",
-                                                     "Horizontal overshoot distance",
-                                                     "Space we allow the widget to pass over its horizontal limits when "
-                                                     "hitting the edges, set 0 in order to deactivate overshooting.",
-                                                     0, G_MAXINT, 150,
-                                                     G_PARAM_READWRITE |
-                                                     G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_SCROLL_TIME,
-				   g_param_spec_double ("scroll_time",
-							"Time to scroll to a position",
-							"The time to scroll to a position when calling the hildon_pannable_scroll_to() function.",
-							0.0, 20.0, 1.0,
-							G_PARAM_READWRITE |
-							G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
- 				   PROP_INITIAL_HINT,
- 				   g_param_spec_boolean ("initial-hint",
- 							 "Initial hint",
- 							 "Whether to hint the user about the pannability of the container.",
- 							 TRUE,
-							 G_PARAM_READWRITE |
- 							 G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
- 				   PROP_LOW_FRICTION_MODE,
- 				   g_param_spec_boolean ("low-friction-mode",
- 							 "Do not decelerate the initial velocity",
-							 "Avoid decelerating the panning movement, like no friction, the widget "
-                                                         "will stop in the edges or if the user clicks.",
- 							 FALSE,
-							 G_PARAM_READWRITE |
- 							 G_PARAM_CONSTRUCT));
-
-  g_object_class_install_property (object_class,
-				   PROP_HADJUSTMENT,
-				   g_param_spec_object ("hadjustment",
-							"Horizontal Adjustment",
-							"The GtkAdjustment for the horizontal position.",
-							GTK_TYPE_ADJUSTMENT,
-							G_PARAM_READABLE));
-  g_object_class_install_property (object_class,
-				   PROP_VADJUSTMENT,
-				   g_param_spec_object ("vadjustment",
-							"Vertical Adjustment",
-							"The GtkAdjustment for the vertical position.",
-							GTK_TYPE_ADJUSTMENT,
-							G_PARAM_READABLE));
-
-  g_object_class_install_property (object_class,
-                                   PROP_CENTER_ON_CHILD_FOCUS,
-                                   g_param_spec_boolean ("center-on-child-focus",
-                                                         "Center on the child with the focus",
-                                                         "Whether to center the pannable on the child that receives the focus.",
-                                                         FALSE,
-                                                         G_PARAM_READWRITE |
-                                                         G_PARAM_CONSTRUCT));
-
-
-  gtk_widget_class_install_style_property (widget_class,
-					   g_param_spec_uint
-					   ("indicator-width",
-					    "Width of the scroll indicators",
-					    "Pixel width used to draw the scroll indicators.",
-					    0, G_MAXUINT, 8,
-					    G_PARAM_READWRITE));
-
- /**
-   * HildonPannableArea::horizontal-movement:
-   * @hildonpannable: the object which received the signal
-   * @direction: the direction of the movement #HILDON_MOVEMENT_LEFT or #HILDON_MOVEMENT_RIGHT
-   * @initial_x: the x coordinate of the point where the user clicked to start the movement
-   * @initial_y: the y coordinate of the point where the user clicked to start the movement
-   *
-   * The horizontal-movement signal is emitted when the pannable area
-   * detects a horizontal movement. The detection does not mean the
-   * widget is going to move (i.e. maybe the children are smaller
-   * horizontally than the screen).
-   *
-   * Since: 2.2
-   */
-  pannable_area_signals[HORIZONTAL_MOVEMENT] =
-    g_signal_new ("horizontal_movement",
-		  G_TYPE_FROM_CLASS (object_class),
-		  G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-		  G_STRUCT_OFFSET (HildonPannableAreaClass, horizontal_movement),
-		  NULL, NULL,
-		  _hildon_marshal_VOID__INT_DOUBLE_DOUBLE,
-		  G_TYPE_NONE, 3,
-                  G_TYPE_INT,
-		  G_TYPE_DOUBLE,
-		  G_TYPE_DOUBLE);
-
-  /**
-   * HildonPannableArea::vertical-movement:
-   * @hildonpannable: the object which received the signal
-   * @direction: the direction of the movement #HILDON_MOVEMENT_UP or #HILDON_MOVEMENT_DOWN
-   * @initial_x: the x coordinate of the point where the user clicked to start the movement
-   * @initial_y: the y coordinate of the point where the user clicked to start the movement
-   *
-   * The vertical-movement signal is emitted when the pannable area
-   * detects a vertical movement. The detection does not mean the
-   * widget is going to move (i.e. maybe the children are smaller
-   * vertically than the screen).
-   *
-   * Since: 2.2
-   */
-  pannable_area_signals[VERTICAL_MOVEMENT] =
-    g_signal_new ("vertical_movement",
-		  G_TYPE_FROM_CLASS (object_class),
-		  G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-		  G_STRUCT_OFFSET (HildonPannableAreaClass, vertical_movement),
-		  NULL, NULL,
-		  _hildon_marshal_VOID__INT_DOUBLE_DOUBLE,
-		  G_TYPE_NONE, 3,
-                  G_TYPE_INT,
-		  G_TYPE_DOUBLE,
-		  G_TYPE_DOUBLE);
-
- /**
-   * HildonPannableArea::panning-started:
-   * @hildonpannable: the pannable area object that is going to start
-   * the panning
-   *
-   * This signal is emitted before the panning starts. Applications
-   * can return %TRUE to avoid the panning. The main difference with
-   * the vertical-movement and horizontal-movement signals is those
-   * gesture signals are launched no matter if the widget is going to
-   * move, this signal means the widget is going to start moving. It
-   * could even happen that the widget moves and there was no gesture
-   * (i.e. click meanwhile the pannable is overshooting).
-   *
-   * Returns: %TRUE to stop the panning launch. %FALSE to continue
-   * with it.
-   *
-   * Since: 2.2
-   */
-  pannable_area_signals[PANNING_STARTED] =
-    g_signal_new ("panning-started",
-                  G_TYPE_FROM_CLASS (object_class),
-                  0,
-                  0,
-                  NULL, NULL,
-                  _hildon_marshal_BOOLEAN__VOID,
-                  G_TYPE_BOOLEAN, 0);
-
- /**
-   * HildonPannableArea::panning-finished:
-   * @hildonpannable: the pannable area object that finished the
-   * panning
-   *
-   * This signal is emitted after the kinetic panning has
-   * finished.
-   *
-   * Since: 2.2
-   */
-  pannable_area_signals[PANNING_FINISHED] =
-    g_signal_new ("panning-finished",
-                  G_TYPE_FROM_CLASS (object_class),
-                  0,
-                  0,
-                  NULL, NULL,
-                  _hildon_marshal_VOID__VOID,
-                  G_TYPE_NONE, 0);
-
+*/
 }
 
 static void
 hildon_pannable_area_init (HildonPannableArea * area)
 {
-  HildonPannableAreaPrivate *priv = PANNABLE_AREA_PRIVATE (area);
+  area->priv = hildon_pannable_area_get_instance_private (area);
+  area->priv->duration = 200;
+  area->priv->clock = gtk_widget_get_frame_clock (GTK_WIDGET (area));
 
-  gtk_widget_set_has_window (GTK_WIDGET (area), TRUE);
-
-  area->priv = priv;
-
-  priv->moved = FALSE;
-  priv->button_pressed = FALSE;
-  priv->last_time = 0;
-  priv->last_press_time = 0;
-  priv->last_type = 0;
-  priv->vscroll_visible = TRUE;
-  priv->hscroll_visible = TRUE;
-  priv->indicator_width = 6;
-  priv->overshot_dist_x = 0;
-  priv->overshot_dist_y = 0;
-  priv->overshooting_y = 0;
-  priv->overshooting_x = 0;
-  priv->accel_vel_x = 0;
-  priv->accel_vel_y = 0;
-  priv->idle_id = 0;
-  priv->vel_x = 0;
-  priv->vel_y = 0;
-  priv->old_vel_x = 0;
-  priv->old_vel_y = 0;
-  priv->scroll_indicator_alpha = 0.0;
-  priv->scroll_indicator_timeout = 0;
-  priv->motion_event_scroll_timeout = 0;
-  priv->scroll_indicator_event_interrupt = 0;
-  priv->scroll_delay_counter = 0;
-  priv->scrollbar_fade_delay = 0;
-  priv->scroll_to_x = -1;
-  priv->scroll_to_y = -1;
-  priv->fade_in = FALSE;
-  priv->first_drag = TRUE;
-  priv->initial_effect = TRUE;
-  priv->child_width = 0;
-  priv->child_height = 0;
-  priv->last_in = TRUE;
-  priv->x_offset = 0;
-  priv->y_offset = 0;
-  priv->center_on_child_focus_pending = FALSE;
-  priv->selection_movement = FALSE;
-
-  gtk_style_lookup_color (gtk_widget_get_style (GTK_WIDGET (area)),
-			  "SecondaryTextColor", &priv->scroll_color);
-
-  priv->hadjust =
-    GTK_ADJUSTMENT (gtk_adjustment_new (0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
-  priv->vadjust =
-    GTK_ADJUSTMENT (gtk_adjustment_new (0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
-
-  g_object_ref_sink (G_OBJECT (priv->hadjust));
-  g_object_ref_sink (G_OBJECT (priv->vadjust));
-
-  g_signal_connect_swapped (priv->hadjust, "value-changed",
-			    G_CALLBACK (hildon_pannable_area_adjust_value_changed), area);
-  g_signal_connect_swapped (priv->vadjust, "value-changed",
-			    G_CALLBACK (hildon_pannable_area_adjust_value_changed), area);
-  g_signal_connect_swapped (priv->hadjust, "changed",
-			    G_CALLBACK (hildon_pannable_area_adjust_changed), area);
-  g_signal_connect_swapped (priv->vadjust, "changed",
-			    G_CALLBACK (hildon_pannable_area_adjust_changed), area);
-  g_signal_connect (area, "grab-notify",
-                    G_CALLBACK (hildon_pannable_area_grab_notify), NULL);
+  gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (area),
+                                  GTK_POLICY_NEVER,
+                                  GTK_POLICY_AUTOMATIC);
+  gtk_scrolled_window_set_hadjustment (GTK_SCROLLED_WINDOW (area), NULL);
+  gtk_scrolled_window_set_vadjustment (GTK_SCROLLED_WINDOW (area), NULL);
 }
 
 static void
@@ -786,91 +407,12 @@ hildon_pannable_area_get_property (GObject * object,
   HildonPannableAreaPrivate *priv = HILDON_PANNABLE_AREA (object)->priv;
 
   switch (property_id) {
-  case PROP_ENABLED:
-    g_value_set_boolean (value, priv->enabled);
-    break;
-  case PROP_MODE:
-    g_value_set_enum (value, priv->mode);
-    break;
-  case PROP_MOVEMENT_MODE:
-    g_value_set_flags (value, priv->mov_mode);
-    break;
-  case PROP_VELOCITY_MIN:
-    g_value_set_double (value, priv->vmin);
-    break;
-  case PROP_VELOCITY_MAX:
-    g_value_set_double (value, priv->vmax);
-    break;
-  case PROP_VEL_MAX_OVERSHOOTING:
-    g_value_set_double (value, priv->vmax_overshooting);
-    break;
-  case PROP_VELOCITY_FAST_FACTOR:
-    g_value_set_double (value, priv->vfast_factor);
-    break;
-  case PROP_DECELERATION:
-    g_value_set_double (value, priv->decel);
-    break;
-  case PROP_DRAG_INERTIA:
-    g_value_set_double (value, priv->drag_inertia);
-    break;
-  case PROP_SPS:
-    g_value_set_uint (value, priv->sps);
-    break;
-  case PROP_PANNING_THRESHOLD:
-    g_value_set_uint (value, priv->panning_threshold);
-    break;
-  case PROP_SCROLLBAR_FADE_DELAY:
-    /* convert to miliseconds */
-    g_value_set_uint (value, priv->scrollbar_fade_delay * SCROLL_FADE_TIMEOUT);
-    break;
-  case PROP_BOUNCE_STEPS:
-    g_value_set_uint (value, priv->bounce_steps);
-    break;
-  case PROP_FORCE:
-    g_value_set_uint (value, priv->force);
-    break;
-  case PROP_DIRECTION_ERROR_MARGIN:
-    g_value_set_uint (value, priv->direction_error_margin);
-    break;
-  case PROP_VSCROLLBAR_POLICY:
-    g_value_set_enum (value, priv->vscrollbar_policy);
-    break;
-  case PROP_HSCROLLBAR_POLICY:
-    g_value_set_enum (value, priv->hscrollbar_policy);
-    break;
-  case PROP_VOVERSHOOT_MAX:
-    g_value_set_int (value, priv->vovershoot_max);
-    break;
-  case PROP_HOVERSHOOT_MAX:
-    g_value_set_int (value, priv->hovershoot_max);
-    break;
-  case PROP_SCROLL_TIME:
-    g_value_set_double (value, priv->scroll_time);
-    break;
-  case PROP_INITIAL_HINT:
-    g_value_set_boolean (value, priv->initial_hint);
-    break;
-  case PROP_LOW_FRICTION_MODE:
-    g_value_set_boolean (value, priv->low_friction_mode);
-    break;
-  case PROP_SIZE_REQUEST_POLICY:
-    g_value_set_enum (value, priv->size_request_policy);
-    break;
-  case PROP_HADJUSTMENT:
-    g_value_set_object (value,
-                        hildon_pannable_area_get_hadjustment
-                        (HILDON_PANNABLE_AREA (object)));
-    break;
-  case PROP_VADJUSTMENT:
-    g_value_set_object (value,
-                        hildon_pannable_area_get_vadjustment
-                        (HILDON_PANNABLE_AREA (object)));
-    break;
-  case PROP_CENTER_ON_CHILD_FOCUS:
+/*  case PROP_CENTER_ON_CHILD_FOCUS:
     g_value_set_boolean (value, priv->center_on_child_focus);
-    break;
+    break;*/
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+    break;
   }
 }
 
@@ -884,7 +426,7 @@ hildon_pannable_area_set_property (GObject * object,
   gboolean enabled;
 
   switch (property_id) {
-  case PROP_ENABLED:
+/*  case PROP_ENABLED:
     enabled = g_value_get_boolean (value);
 
     if ((priv->enabled != enabled) && (gtk_widget_get_realized (GTK_WIDGET (object)))) {
@@ -896,96 +438,11 @@ hildon_pannable_area_set_property (GObject * object,
 
     priv->enabled = enabled;
     break;
-  case PROP_MODE:
-    priv->mode = g_value_get_enum (value);
-    break;
-  case PROP_MOVEMENT_MODE:
-    priv->mov_mode = g_value_get_flags (value);
-    break;
-  case PROP_VELOCITY_MIN:
-    priv->vmin = g_value_get_double (value);
-    break;
-  case PROP_VELOCITY_MAX:
-    priv->vmax = g_value_get_double (value);
-    break;
-  case PROP_VEL_MAX_OVERSHOOTING:
-    priv->vmax_overshooting = g_value_get_double (value);
-    break;
-  case PROP_VELOCITY_FAST_FACTOR:
-    priv->vfast_factor = g_value_get_double (value);
-    break;
-  case PROP_DECELERATION:
-    priv->decel = g_value_get_double (value);
-    hildon_pannable_calculate_vel_factor (HILDON_PANNABLE_AREA (object));
-    break;
-  case PROP_DRAG_INERTIA:
-    priv->drag_inertia = g_value_get_double (value);
-    break;
-  case PROP_SPS:
-    priv->sps = g_value_get_uint (value);
-    break;
-  case PROP_PANNING_THRESHOLD:
-    {
-      GtkSettings *settings = gtk_settings_get_default ();
-      GtkSettingsValue svalue = { NULL, { 0, }, };
-
-      priv->panning_threshold = g_value_get_uint (value);
-
-      /* insure gtk dnd is the same we are using, not allowed
-         different thresholds in the same application */
-      svalue.origin = "panning_threshold";
-      g_value_init (&svalue.value, G_TYPE_LONG);
-      g_value_set_long (&svalue.value, priv->panning_threshold);
-      gtk_settings_set_property_value (settings, "gtk-dnd-drag-threshold", &svalue);
-      g_value_unset (&svalue.value);
-    }
-    break;
-  case PROP_SCROLLBAR_FADE_DELAY:
-    /* convert to miliseconds */
-    priv->scrollbar_fade_delay = g_value_get_uint (value)/(SCROLL_FADE_TIMEOUT);
-    break;
-  case PROP_BOUNCE_STEPS:
-    priv->bounce_steps = g_value_get_uint (value);
-    break;
-  case PROP_FORCE:
-    priv->force = g_value_get_uint (value);
-    break;
-  case PROP_DIRECTION_ERROR_MARGIN:
-    priv->direction_error_margin = g_value_get_uint (value);
-    break;
-  case PROP_VSCROLLBAR_POLICY:
-    priv->vscrollbar_policy = g_value_get_enum (value);
-
-    gtk_widget_queue_resize (GTK_WIDGET (object));
-    break;
-  case PROP_HSCROLLBAR_POLICY:
-    priv->hscrollbar_policy = g_value_get_enum (value);
-
-    gtk_widget_queue_resize (GTK_WIDGET (object));
-    break;
-  case PROP_VOVERSHOOT_MAX:
-    priv->vovershoot_max = g_value_get_int (value);
-    break;
-  case PROP_HOVERSHOOT_MAX:
-    priv->hovershoot_max = g_value_get_int (value);
-    break;
-  case PROP_SCROLL_TIME:
-    priv->scroll_time = g_value_get_double (value);
-
-    hildon_pannable_calculate_vel_factor (HILDON_PANNABLE_AREA (object));
-    break;
-  case PROP_INITIAL_HINT:
-    priv->initial_hint = g_value_get_boolean (value);
-    break;
-  case PROP_LOW_FRICTION_MODE:
-    priv->low_friction_mode = g_value_get_boolean (value);
-    break;
-  case PROP_CENTER_ON_CHILD_FOCUS:
-    priv->center_on_child_focus = g_value_get_boolean (value);
-    break;
+*/
 
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+    break;
   }
 }
 
@@ -1137,56 +594,6 @@ hildon_pannable_area_unrealize (GtkWidget * widget)
 }
 
 static void
-hildon_pannable_area_get_preferred_width (GtkWidget *widget,
-                                          gint      *minimum,
-                                          gint      *natural)
-{
-  gint child_minimum, child_natural;
-  HildonPannableAreaPrivate *priv = HILDON_PANNABLE_AREA (widget)->priv;
-  GtkWidget *child = gtk_bin_get_child (GTK_BIN (widget));
-
-  if (child && gtk_widget_get_visible (child))
-    {
-      gtk_widget_get_preferred_width (child, &child_minimum, &child_natural);
-    }
-
-  if (priv->hscrollbar_policy == GTK_POLICY_NEVER) {
-    *minimum = child_minimum;
-    *natural = child_natural;
-  } else {
-    *minimum = *natural = priv->indicator_width;
-  }
-
-  *minimum += 2 * gtk_container_get_border_width (GTK_CONTAINER (widget));
-  *natural += 2 * gtk_container_get_border_width (GTK_CONTAINER (widget));
-}
-
-static void
-hildon_pannable_area_get_preferred_height (GtkWidget *widget,
-                                           gint      *minimum,
-                                           gint      *natural)
-{
-  gint child_minimum, child_natural;
-  HildonPannableAreaPrivate *priv = HILDON_PANNABLE_AREA (widget)->priv;
-  GtkWidget *child = gtk_bin_get_child (GTK_BIN (widget));
-
-  if (child && gtk_widget_get_visible (child))
-    {
-      gtk_widget_get_preferred_height (child, &child_minimum, &child_natural);
-    }
-
-  if (priv->vscrollbar_policy == GTK_POLICY_NEVER) {
-    *minimum = child_minimum;
-    *natural = child_natural;
-  } else {
-    *minimum = *natural = priv->indicator_width;
-  }
-
-  *minimum += 2 * gtk_container_get_border_width (GTK_CONTAINER (widget));
-  *natural += 2 * gtk_container_get_border_width (GTK_CONTAINER (widget));
-}
-
-static void
 hildon_pannable_area_child_allocate_calculate (GtkWidget * widget,
                                                GtkAllocation * allocation,
                                                GtkAllocation * child_allocation)
@@ -1318,47 +725,6 @@ toplevel_window_unmapped (GtkWidget * widget,
                           HildonPannableArea * area)
 {
     area->priv->initial_effect = TRUE;
-}
-
-static void
-hildon_pannable_area_map (GtkWidget * widget)
-{
-  HildonPannableAreaPrivate *priv;
-
-  priv = HILDON_PANNABLE_AREA (widget)->priv;
-
-  gdk_window_show (gtk_widget_get_window (widget));
-
-  if (priv->event_window != NULL && !priv->enabled)
-    gdk_window_show (priv->event_window);
-
-  (*GTK_WIDGET_CLASS (hildon_pannable_area_parent_class)->map) (widget);
-
-  if (priv->event_window != NULL && priv->enabled)
-    gdk_window_show (priv->event_window);
-
-  g_signal_connect (gtk_widget_get_toplevel (widget), "unmap",
-                    G_CALLBACK (toplevel_window_unmapped), widget);
-}
-
-static void
-hildon_pannable_area_unmap (GtkWidget * widget)
-{
-  HildonPannableAreaPrivate *priv;
-
-  priv = HILDON_PANNABLE_AREA (widget)->priv;
-
-  priv->initial_effect = TRUE;
-  g_signal_handlers_disconnect_by_func (gtk_widget_get_toplevel (widget),
-                                        G_CALLBACK (toplevel_window_unmapped),
-                                        widget);
-
-  if (priv->event_window != NULL)
-    gdk_window_hide (priv->event_window);
-
-  gdk_window_hide (gtk_widget_get_window (widget));
-
-  (*GTK_WIDGET_CLASS (hildon_pannable_area_parent_class)->unmap) (widget);
 }
 
 static void
@@ -2574,7 +1940,12 @@ hildon_pannable_area_motion_notify_cb (GtkWidget * widget,
 
   if ((!priv->enabled) || (!priv->button_pressed) ||
       ((event->time == priv->last_time) && (priv->last_type == 2))) {
-    gdk_window_get_pointer (gtk_widget_get_window (widget), NULL, NULL, 0);
+    GdkWindow* window = gtk_widget_get_window (widget);
+    gdk_window_get_device_position (window,
+                                    gdk_device_manager_get_client_pointer (
+                                      gdk_display_get_device_manager (
+                                        gdk_window_get_display (window))),
+                                    NULL, NULL, 0);
     return TRUE;
   }
 
@@ -2628,7 +1999,13 @@ hildon_pannable_area_motion_notify_cb (GtkWidget * widget,
       gdk_event_free ((GdkEvent *) event);
   }
 
-  gdk_window_get_pointer (gtk_widget_get_window (widget), NULL, NULL, 0);
+  GdkWindow* window = gtk_widget_get_window (widget);
+  gdk_window_get_device_position (window,
+                                  gdk_device_manager_get_client_pointer (
+                                    gdk_display_get_device_manager (
+                                      gdk_window_get_display (window))),
+                                  NULL, NULL, 0);
+
 
   return TRUE;
 }
@@ -3062,35 +2439,6 @@ hildon_pannable_area_new (void)
 }
 
 /**
- * hildon_pannable_area_new_full:
- * @mode: #HildonPannableAreaMode
- * @enabled: Value for the enabled property
- * @vel_min: Value for the velocity-min property
- * @vel_max: Value for the velocity-max property
- * @decel: Value for the deceleration property
- * @sps: Value for the sps property
- *
- * Create a new #HildonPannableArea widget and set various properties
- *
- * returns: the newly create #HildonPannableArea
- *
- * Since: 2.2
- */
-
-GtkWidget *
-hildon_pannable_area_new_full (gint mode, gboolean enabled,
-			       gdouble vel_min, gdouble vel_max,
-			       gdouble decel, guint sps)
-{
-  return g_object_new (HILDON_TYPE_PANNABLE_AREA,
-		       "mode", mode,
-		       "enabled", enabled,
-		       "velocity_min", vel_min,
-		       "velocity_max", vel_max,
-		       "deceleration", decel, "sps", sps, NULL);
-}
-
-/**
  * hildon_pannable_area_add_with_viewport:
  * @area: A #HildonPannableArea
  * @child: Child widget to add to the viewport
@@ -3137,6 +2485,136 @@ hildon_pannable_area_add_with_viewport (HildonPannableArea * area,
 
   gtk_widget_show (viewport);
   gtk_container_add (GTK_CONTAINER (viewport), child);
+}
+
+static void hildon_pannable_area_on_frame_clock_update (GdkFrameClock *clock,
+                                                        HildonPannableArea *area);
+
+static void
+hildon_pannable_area_begin_updating (HildonPannableArea *area)
+{
+  HildonPannableAreaPrivate *priv = area->priv;
+
+  if (priv->tick_id == 0)
+    {
+      priv->tick_id = g_signal_connect (priv->clock, "update",
+                                        G_CALLBACK (hildon_pannable_area_on_frame_clock_update), area);
+      gdk_frame_clock_begin_updating (priv->clock);
+    }
+}
+
+static void
+hildon_pannable_area_end_updating (HildonPannableArea *area)
+{
+  HildonPannableAreaPrivate *priv = area->priv;
+
+  if (priv->tick_id != 0)
+    {
+      g_signal_handler_disconnect (priv->clock, priv->tick_id);
+      priv->tick_id = 0;
+      gdk_frame_clock_end_updating (priv->clock);
+    }
+}
+
+/* From clutter-easing.c, based on Robert Penner's
+ * infamous easing equations, MIT license.
+ */
+static gdouble
+ease_out_cubic (gdouble t)
+{
+  gdouble p = t - 1;
+
+  return p * p * p + 1;
+}
+
+static void
+hildon_pannable_area_on_frame_clock_update (GdkFrameClock *clock,
+                                            HildonPannableArea *area)
+{
+  HildonPannableAreaPrivate *priv = area->priv;
+  gint64 now;
+
+  now = gdk_frame_clock_get_frame_time (clock);
+
+  GtkAdjustment *hadj;
+  GtkAdjustment *vadj;
+
+  hadj = gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW (area));
+  vadj = gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW (area));
+
+  if (now < priv->end_time)
+    {
+      gdouble t;
+
+      t = (now - priv->start_time) / (gdouble) (priv->end_time - priv->start_time);
+      t = ease_out_cubic (t);
+      gtk_adjustment_set_value (hadj, priv->hsource + t * (priv->htarget - priv->hsource));
+      gtk_adjustment_set_value (vadj, priv->vsource + t * (priv->vtarget - priv->vsource));
+    }
+  else
+    {
+      gtk_adjustment_set_value (hadj, priv->htarget);
+      gtk_adjustment_set_value (vadj, priv->vtarget);
+      hildon_pannable_area_end_updating (area);
+    }
+}
+
+
+// WORKING ON THIS.  HANDLE -1 values
+static void hildon_pannable_area_set_value_internal (HildonPannableArea *area,
+                                         gdouble             hvalue,
+                                         gdouble             vvalue,
+                                         gboolean            animate)
+{
+  HildonPannableAreaPrivate *priv = area->priv;
+
+  /* don't use CLAMP() so we don't end up below lower if upper - page_size
+   * is smaller than lower
+   */
+
+  GtkAdjustment *vadj = gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW (area));
+  if (vvalue == -1)
+    {
+      vvalue = gtk_adjustment_get_value (vadj);
+    }
+  else
+    {
+      vvalue = MIN (vvalue, gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj));
+      vvalue = MAX (vvalue, gtk_adjustment_get_lower(vadj));
+    }
+
+  GtkAdjustment *hadj = gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW (area));
+  if (hvalue == -1)
+    {
+      hvalue = gtk_adjustment_get_value (hadj);
+    }
+  else
+    {
+      hvalue = MIN (hvalue, gtk_adjustment_get_upper(hadj) - gtk_adjustment_get_page_size(hadj));
+      hvalue = MAX (hvalue, gtk_adjustment_get_lower(hadj));
+    }
+
+  area->priv->clock = gtk_widget_get_frame_clock (GTK_WIDGET (area));
+  
+  if (animate && priv->duration != 0 && priv->clock != NULL)
+    {
+      if (priv->tick_id && priv->htarget == hvalue && priv->vtarget == vvalue)
+        return;
+
+      priv->vsource = gtk_adjustment_get_value (vadj);
+      priv->vtarget = vvalue;
+      priv->hsource = gtk_adjustment_get_value (hadj);
+      priv->htarget = hvalue;
+      priv->start_time = gdk_frame_clock_get_frame_time (priv->clock);
+      priv->end_time = priv->start_time + 1000 * priv->duration;
+      hildon_pannable_area_begin_updating (area);
+    }
+  else
+    {
+      hildon_pannable_area_end_updating (area);
+      gtk_adjustment_set_value (vadj, vvalue);
+      gtk_adjustment_set_value (hadj, hvalue);
+    }
 }
 
 /**
@@ -3186,72 +2664,46 @@ hildon_pannable_area_scroll_to (HildonPannableArea *area,
 				const gint x, const gint y)
 {
   HildonPannableAreaPrivate *priv;
-  gint width, height;
-  gint dist_x, dist_y;
   gboolean hscroll_visible, vscroll_visible;
 
-  g_return_if_fail (gtk_widget_get_realized (GTK_WIDGET (area)));
   g_return_if_fail (HILDON_IS_PANNABLE_AREA (area));
+  g_return_if_fail (gtk_widget_get_realized (GTK_WIDGET (area)));
 
   priv = area->priv;
 
-  vscroll_visible = (gtk_adjustment_get_upper (priv->vadjust) - gtk_adjustment_get_lower (priv->vadjust) >
-	     gtk_adjustment_get_page_size (priv->vadjust));
-  hscroll_visible = (gtk_adjustment_get_upper (priv->hadjust) - gtk_adjustment_get_lower (priv->hadjust) >
-	     gtk_adjustment_get_page_size (priv->hadjust));
+  GtkAdjustment *hadj;
+  GtkAdjustment *vadj;
 
-  if (((!vscroll_visible)&&(!hscroll_visible)) ||
-      (x == -1 && y == -1)) {
+  hadj = gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW (area));
+  vadj = gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW (area));
+
+  vscroll_visible = (gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_lower(vadj) > gtk_adjustment_get_page_size(vadj));
+  hscroll_visible = (gtk_adjustment_get_upper(hadj) - gtk_adjustment_get_lower(hadj) > gtk_adjustment_get_page_size(hadj));
+
+  // We don't have a scroll bar present so don't do anything.
+  if (((!vscroll_visible)&&(!hscroll_visible)) || (x == -1 && y == -1)) {
     return;
   }
 
-  if (priv->mode == HILDON_PANNABLE_AREA_MODE_PUSH)
-    hildon_pannable_area_jump_to (area, x, y);
+  gdouble scroll_to_x = CLAMP (x - gtk_adjustment_get_page_size(hadj)/2,
+                               gtk_adjustment_get_lower(hadj),
+                               gtk_adjustment_get_upper(hadj) - gtk_adjustment_get_page_size(hadj));
+  gdouble scroll_to_y = CLAMP (y - gtk_adjustment_get_page_size(vadj)/2,
+                               gtk_adjustment_get_lower(vadj),
+                               gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj));
 
-  width = gtk_adjustment_get_upper (priv->hadjust) - gtk_adjustment_get_lower (priv->hadjust);
-  height = gtk_adjustment_get_upper (priv->vadjust) - gtk_adjustment_get_lower (priv->vadjust);
-
-  g_return_if_fail (x < width || y < height);
-
-  if ((x > -1)&&(hscroll_visible)) {
-    priv->scroll_to_x = CLAMP (x - gtk_adjustment_get_page_size (priv->hadjust)/2,
-                               gtk_adjustment_get_lower (priv->hadjust),
-                               gtk_adjustment_get_upper (priv->hadjust) - gtk_adjustment_get_page_size (priv->hadjust));
-    dist_x = priv->scroll_to_x - gtk_adjustment_get_value (priv->hadjust);
-    if (dist_x == 0) {
-      priv->scroll_to_x = -1;
-    } else {
-      priv->vel_x = - dist_x/priv->vel_factor;
-    }
-  } else {
-    priv->scroll_to_x = -1;
-  }
-
-  if ((y > -1)&&(vscroll_visible)) {
-    priv->scroll_to_y = CLAMP (y - gtk_adjustment_get_page_size (priv->vadjust)/2,
-                               gtk_adjustment_get_lower (priv->vadjust),
-                               gtk_adjustment_get_upper (priv->vadjust) - gtk_adjustment_get_page_size (priv->vadjust));
-    dist_y = priv->scroll_to_y - gtk_adjustment_get_value (priv->vadjust);
-    if (dist_y == 0) {
-      priv->scroll_to_y = -1;
-    } else {
-      priv->vel_y = - dist_y/priv->vel_factor;
-    }
-  } else {
-    priv->scroll_to_y = y;
-  }
-
-  if ((priv->scroll_to_y == -1) && (priv->scroll_to_x == -1)) {
-    return;
-  }
-
-  hildon_pannable_area_launch_fade_timeout (area, 1.0);
-
-  if (!priv->idle_id)
-    priv->idle_id = gdk_threads_add_timeout_full (G_PRIORITY_HIGH_IDLE + 20,
-						  (gint) (1000.0 / (gdouble) priv->sps),
-						  (GSourceFunc) hildon_pannable_area_timeout,
-						  area, NULL);
+  hildon_pannable_area_set_value_internal (area, scroll_to_x, scroll_to_y, TRUE);
+/*
+  if (x != -1)
+    gtk_adjustment_set_value(hadj, CLAMP (x - gtk_adjustment_get_page_size(hadj)/2,
+                               gtk_adjustment_get_lower(hadj),
+                               gtk_adjustment_get_upper(hadj) - gtk_adjustment_get_page_size(hadj)));
+  if (y != -1)
+  {
+    gtk_adjustment_set_value(vadj, CLAMP (y - gtk_adjustment_get_page_size(vadj)/2,
+                               gtk_adjustment_get_lower(vadj),
+                               gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj)));
+  }*/
 }
 
 /**
@@ -3277,73 +2729,47 @@ void
 hildon_pannable_area_jump_to (HildonPannableArea *area,
                               const gint x, const gint y)
 {
-  HildonPannableAreaPrivate *priv;
-  gint width, height;
-  gdouble hv, vv;
+   HildonPannableAreaPrivate *priv;
+  gboolean hscroll_visible, vscroll_visible;
 
   g_return_if_fail (HILDON_IS_PANNABLE_AREA (area));
   g_return_if_fail (gtk_widget_get_realized (GTK_WIDGET (area)));
-  g_return_if_fail (x >= -1 && y >= -1);
-
-  if (x == -1 && y == -1) {
-    return;
-  }
 
   priv = area->priv;
 
-  width = gtk_adjustment_get_upper (priv->hadjust) - gtk_adjustment_get_lower (priv->hadjust);
-  height = gtk_adjustment_get_upper (priv->vadjust) - gtk_adjustment_get_lower (priv->vadjust);
+  GtkAdjustment *hadj;
+  GtkAdjustment *vadj;
 
-  g_return_if_fail (x < width || y < height);
+  hadj = gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW (area));
+  vadj = gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW (area));
 
-  hv = gtk_adjustment_get_value (priv->hadjust);
-  vv = gtk_adjustment_get_value (priv->vadjust);
+  vscroll_visible = (gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_lower(vadj) > gtk_adjustment_get_page_size(vadj));
+  hscroll_visible = (gtk_adjustment_get_upper(hadj) - gtk_adjustment_get_lower(hadj) > gtk_adjustment_get_page_size(hadj));
 
-  if (x != -1) {
-    gdouble jump_to = x - gtk_adjustment_get_page_size (priv->hadjust)/2;
-
-    gtk_adjustment_set_value (priv->hadjust,
-                              CLAMP (jump_to,
-                                     gtk_adjustment_get_lower (priv->hadjust),
-                                     gtk_adjustment_get_upper (priv->hadjust) -
-                                     gtk_adjustment_get_page_size (priv->hadjust)));
+  // We don't have a scroll bar present so don't do anything.
+  if (((!vscroll_visible)&&(!hscroll_visible)) || (x == -1 && y == -1)) {
+    return;
   }
 
-  if (y != -1) {
-    gdouble jump_to =  y - gtk_adjustment_get_page_size (priv->vadjust)/2;
+  gdouble jump_to_x = CLAMP (x - gtk_adjustment_get_page_size(hadj)/2,
+                               gtk_adjustment_get_lower(hadj),
+                               gtk_adjustment_get_upper(hadj) - gtk_adjustment_get_page_size(hadj));
+  gdouble jump_to_y = CLAMP (y - gtk_adjustment_get_page_size(vadj)/2,
+                               gtk_adjustment_get_lower(vadj),
+                               gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj));
 
-    gtk_adjustment_set_value (priv->vadjust,
-                              CLAMP (jump_to,
-                                     gtk_adjustment_get_lower (priv->vadjust),
-                                     gtk_adjustment_get_upper (priv->vadjust) -
-                                     gtk_adjustment_get_page_size (priv->vadjust)));
-  }
+  hildon_pannable_area_set_value_internal (area, jump_to_x, jump_to_y, FALSE);
 
-  if (hv != gtk_adjustment_get_value (priv->hadjust))
-    gtk_adjustment_value_changed (priv->hadjust);
-
-  if (vv != gtk_adjustment_get_value (priv->vadjust))
-    gtk_adjustment_value_changed (priv->vadjust);
-
-  hildon_pannable_area_launch_fade_timeout (area, 1.0);
-
-  if (priv->idle_id) {
-    priv->vel_x = 0.0;
-    priv->vel_y = 0.0;
-    priv->overshooting_x = 0;
-    priv->overshooting_y = 0;
-
-    if ((priv->overshot_dist_x>0)||(priv->overshot_dist_y>0)) {
-      priv->overshot_dist_x = 0;
-      priv->overshot_dist_y = 0;
-
-      gtk_widget_queue_resize (GTK_WIDGET (area));
-    }
-
-    g_signal_emit (area, pannable_area_signals[PANNING_FINISHED], 0);
-    g_source_remove (priv->idle_id);
-    priv->idle_id = 0;
-  }
+/*  if (x != -1)
+    gtk_adjustment_set_value(hadj, CLAMP (x - gtk_adjustment_get_page_size(hadj)/2,
+                               gtk_adjustment_get_lower(hadj),
+                               gtk_adjustment_get_upper(hadj) - gtk_adjustment_get_page_size(hadj)));
+  if (y != -1)
+  {
+    gtk_adjustment_set_value(vadj, CLAMP (y - gtk_adjustment_get_page_size(vadj)/2,
+                               gtk_adjustment_get_lower(vadj),
+                               gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj)));
+  }*/
 }
 
 /**

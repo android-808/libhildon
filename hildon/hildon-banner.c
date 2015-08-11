@@ -207,7 +207,6 @@ typedef struct                                  _HildonBannerPrivate HildonBanne
 struct                                          _HildonBannerPrivate
 {
     GtkWidget   *main_item;
-    GtkWidget   *alignment;
     GtkWidget   *label;
     GtkWidget   *layout;
     GtkWindow   *parent;
@@ -788,8 +787,9 @@ hildon_banner_init                              (HildonBanner *self)
     priv->main_item = NULL;
 
     /* Initialize the common layout inside banner */
-    priv->alignment = gtk_alignment_new (0.5, 0.5, 0, 0);
-    priv->layout = gtk_hbox_new (FALSE, HILDON_MARGIN_DEFAULT);
+    priv->layout = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, HILDON_MARGIN_DEFAULT);
+    gtk_widget_set_halign (GTK_WIDGET (priv->layout), GTK_ALIGN_CENTER);
+    gtk_widget_set_valign (GTK_WIDGET (priv->layout), GTK_ALIGN_CENTER);
 
     priv->label = g_object_new (GTK_TYPE_LABEL, NULL);
     gtk_label_set_line_wrap (GTK_LABEL (priv->label), TRUE);
@@ -799,8 +799,7 @@ hildon_banner_init                              (HildonBanner *self)
     g_signal_connect (priv->label, "size-request", G_CALLBACK (label_size_request_cb), NULL);
 
     gtk_container_set_border_width (GTK_CONTAINER (priv->layout), HILDON_MARGIN_DEFAULT);
-    gtk_container_add (GTK_CONTAINER (self), priv->alignment);
-    gtk_container_add (GTK_CONTAINER (priv->alignment), priv->layout);
+    gtk_container_add (GTK_CONTAINER (self), priv->layout);
     g_object_ref (priv->label);
     gtk_box_pack_start (GTK_BOX (priv->layout), priv->label, FALSE, FALSE, 0);
 
