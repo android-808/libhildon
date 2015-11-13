@@ -37,6 +37,7 @@ set_placeholder_button_clicked                  (GtkButton *button,
                                                  GtkEntry  *entry)
 {
     //hildon_gtk_entry_set_placeholder_text (mainentry, gtk_entry_get_text (entry));
+    gtk_entry_set_placeholder_text (GTK_ENTRY (mainentry), gtk_entry_get_text (entry));
 }
 
 static void
@@ -67,23 +68,24 @@ main                                            (int    argc,
 
     /* Window and vbox to pack everything */
     win = hildon_stackable_window_new ();
-    vbox = GTK_BOX (gtk_vbox_new (FALSE, 10));
+    vbox = GTK_BOX (gtk_box_new (GTK_ORIENTATION_VERTICAL, 10));
 
     /* Entry to modify the text of the main HildonEntry */
     textentry = hildon_entry_new (HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);
     textbutton = hildon_gtk_button_new (HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);
     gtk_button_set_label (GTK_BUTTON (textbutton), "Set entry text");
-    texthbox = gtk_hbox_new (FALSE, 10);
+    texthbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
 
     /* Entry to modify the placeholder of the main HildonEntry */
     placeholderentry = hildon_entry_new (HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);
     placeholderbutton = hildon_gtk_button_new (HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);
     gtk_button_set_label (GTK_BUTTON (placeholderbutton), "Set entry placeholder");
-    placeholderhbox = gtk_hbox_new (FALSE, 10);
+    placeholderhbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
 
     /* Main HildonEntry - this is the one showcased in this example */
     mainentry = GTK_ENTRY (hildon_entry_new (HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH));
     //hildon_gtk_entry_set_placeholder_text (mainentry, "This is a placeholder - change using the buttons above");
+    gtk_entry_set_placeholder_text (GTK_ENTRY (mainentry), "This is a placeholder - change using the buttons above");
 
     /* This label is used to show the contents -not the placeholder- of the HildonEntry */
     label = gtk_label_new (NULL);
