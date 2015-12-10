@@ -76,7 +76,7 @@ create_icon_view                                (TreeViewMode  tvmode)
   gtk_icon_view_set_model (GTK_ICON_VIEW (icon_view), model);
 
   renderer = gtk_cell_renderer_pixbuf_new ();
-  g_object_set (renderer, "stock-id", GTK_STOCK_NEW, NULL);
+  g_object_set (renderer, "icon-name", "document-new", NULL);
   gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (icon_view), renderer, TRUE);
 
   renderer = gtk_cell_renderer_text_new ();
@@ -171,7 +171,7 @@ main                                            (int    argc,
   g_signal_connect (window, "destroy", G_CALLBACK (gtk_main_quit), NULL);
   gtk_container_set_border_width (GTK_CONTAINER (window), 6);
 
-  vbox = gtk_vbox_new (FALSE, 10);
+  vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 10);
   area = hildon_pannable_area_new ();
   iconview = create_icon_view (NORMAL_MODE);
   button = hildon_gtk_button_new (HILDON_SIZE_AUTO_WIDTH | HILDON_SIZE_FINGER_HEIGHT);

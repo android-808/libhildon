@@ -112,7 +112,7 @@ main                                            (int argc,
     gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_CENTER);
     gtk_label_set_justify (GTK_LABEL (label2), GTK_JUSTIFY_CENTER);
 
-    vbox = GTK_BOX (gtk_vbox_new (FALSE, 10));
+    vbox = GTK_BOX (gtk_box_new (GTK_ORIENTATION_VERTICAL, 10));
     win = hildon_stackable_window_new ();
 
     menu = create_menu (label2, accel);

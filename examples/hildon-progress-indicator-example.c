@@ -53,7 +53,7 @@ main                                            (int    argc,
 
     /* Window and vbox to pack everything */
     win = hildon_stackable_window_new ();
-    vbox = GTK_BOX (gtk_vbox_new (FALSE, 10));
+    vbox = GTK_BOX (gtk_box_new (GTK_ORIENTATION_VERTICAL, 10));
 
     /* Buttons */
     showprogressbutton = hildon_gtk_button_new (HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);

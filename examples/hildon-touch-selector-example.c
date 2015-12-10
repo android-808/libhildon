@@ -109,7 +109,7 @@ get_visible_content (GtkWidget * window)
   g_signal_connect (G_OBJECT (button), "value-changed",
                     G_CALLBACK (value_changed), window);
 
-  result = gtk_vbox_new (FALSE, 6);
+  result = gtk_box_new (GTK_ORIENTATION_VERTICAL, 6);
 
   gtk_container_add (GTK_CONTAINER (result), button);
   gtk_container_add (GTK_CONTAINER (result), label);

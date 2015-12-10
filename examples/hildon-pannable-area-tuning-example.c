@@ -356,14 +356,14 @@ main (gint argc, gchar **argv)
 
     gtk_container_add (GTK_CONTAINER (sw), treeview);
 
-    hbox = gtk_hbox_new (FALSE, 10);
+    hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
 
-    vbox = gtk_vbox_new (FALSE, 10);
+    vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 10);
     gtk_box_pack_start (GTK_BOX (vbox), sw, TRUE, TRUE, 10);
 
     gtk_box_pack_start (GTK_BOX (hbox), vbox, FALSE, FALSE, 10);
 
-/*     vbox = gtk_vbox_new (FALSE, 10); */
+/*     vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 10); */
 /*     gtk_box_pack_start (GTK_BOX (vbox), pannable, TRUE, TRUE, 10); */
     gtk_box_pack_start (GTK_BOX (hbox), pannable, TRUE, TRUE, 10);
 

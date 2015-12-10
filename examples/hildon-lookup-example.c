@@ -25,6 +25,7 @@
 #include                                        <stdio.h>
 #include                                        <stdlib.h>
 #include                                        <glib.h>
+#include                                        <glib/gi18n.h>
 #include                                        <gtk/gtk.h>
 #include                                        <hildon/hildon.h>
 
@@ -40,7 +41,8 @@ create_button_with_icon                         (const gchar *icon)
         return NULL;
     }
 
-    gtk_misc_set_padding (GTK_MISC (image), 12, 12);
+//    gtk_misc_set_padding (GTK_MISC (image), 12, 12);
+    g_object_set (image, "margin", 12, NULL);
 
     GtkButton *button = GTK_BUTTON (gtk_button_new ());
 
@@ -58,19 +60,24 @@ main                                            (int argc,
     GtkDialog *dialog = GTK_DIALOG (gtk_dialog_new ());
     gtk_window_set_title (GTK_WINDOW (dialog), "icons");
 
-    GtkTable *table = GTK_TABLE (gtk_table_new (3, 3, TRUE));
-    gtk_table_attach (table, create_button_with_icon (GTK_STOCK_OK), 0, 1, 0, 1, 0, 0, 0, 0);
-    gtk_table_attach (table, create_button_with_icon (GTK_STOCK_CANCEL), 1, 2, 0, 1, 0, 0, 0, 0);
-    gtk_table_attach (table, create_button_with_icon (GTK_STOCK_QUIT), 2, 3, 0, 1, 0, 0, 0, 0);
+    GtkGrid *grid = GTK_GRID (gtk_grid_new ());
+    // TODO: GTK2 Table was set to use homogeneous cells but in GTK3 this results in grid spanning entire width.
+    //gtk_grid_set_column_homogeneous(grid, TRUE);
+    gtk_grid_set_row_homogeneous(grid, TRUE);
     
-    gtk_table_attach (table, create_button_with_icon (GTK_STOCK_SAVE), 0, 1, 1, 2, 0, 0, 0, 0);
-    gtk_table_attach (table, create_button_with_icon (GTK_STOCK_MEDIA_PAUSE), 1, 2, 1, 2, 0, 0, 0, 0);
-    gtk_table_attach (table, create_button_with_icon (GTK_STOCK_FILE), 2, 3, 1, 2, 0, 0, 0, 0);
+    gtk_grid_attach (grid, create_button_with_icon ("gtk-ok"), 0, 0, 1, 1);
+    gtk_grid_attach (grid, create_button_with_icon ("gtk-cancel"), 1, 0, 1, 1);
+    gtk_grid_attach (grid, create_button_with_icon ("window-close"), 2, 0, 1, 1);
     
-    gtk_table_set_col_spacings (table, 6);
-    gtk_table_set_row_spacings (table, 6);
+    gtk_grid_attach (grid, create_button_with_icon ("document-save"), 0, 1, 1, 1);
+    gtk_grid_attach (grid, create_button_with_icon ("media-playback-pause"), 1, 1, 1, 1);
+    gtk_grid_attach (grid, create_button_with_icon ("text-x-generic"), 2, 1, 1, 1);
+    
+    gtk_grid_set_column_spacing (grid, 6);
+    gtk_grid_set_row_spacing (grid, 6);
 
-    gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area (dialog)), GTK_WIDGET (table), FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (gtk_dialog_get_content_area (dialog)), GTK_WIDGET (grid), FALSE, FALSE, 0);
+
 
     gtk_dialog_add_button (dialog, "Close", GTK_RESPONSE_CLOSE);
 

@@ -90,7 +90,6 @@ create_tree_view                                (void)
     GtkTreeModel *model;
 
     tree_view = gtk_tree_view_new ();
-    gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (tree_view), TRUE);
 
     model = create_model ();
     gtk_tree_view_set_model (GTK_TREE_VIEW (tree_view), model);
@@ -120,7 +119,7 @@ main                                            (int    argc,
     hildon_gtk_init (&argc, &argv);
 
     window = hildon_window_new ();
-    vbox = gtk_vbox_new (FALSE, 0);
+    vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
     panarea = hildon_pannable_area_new ();
 
     treeview = create_tree_view ();

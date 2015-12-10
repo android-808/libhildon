@@ -171,9 +171,9 @@ main (int argc, char **argv)
 
   ctx = g_new0 (SearchContext, 1);
 
-  vbox = gtk_vbox_new (FALSE, 5);
-  hbox = gtk_hbox_new (FALSE, 5);
-  button = gtk_button_new_from_stock (GTK_STOCK_FIND);
+  vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 5);
+  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 5);
+  button = gtk_button_new_from_icon_name ("edit-find", GTK_ICON_SIZE_BUTTON);
 
   entry = gtk_entry_new ();
   gtk_entry_set_text (GTK_ENTRY (entry), "Enter some text to scroll");
@@ -186,8 +186,8 @@ main (int argc, char **argv)
 
   ctx->scroll_entry = entry;
 
-  hbox = gtk_hbox_new (FALSE, 5);
-  button = gtk_button_new_from_stock (GTK_STOCK_FIND);
+  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 5);
+  button = gtk_button_new_from_icon_name ("edit-find", GTK_ICON_SIZE_BUTTON);
 
   entry = gtk_entry_new ();
   gtk_entry_set_text (GTK_ENTRY (entry), "Enter some text to jump");

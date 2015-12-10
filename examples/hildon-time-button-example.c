@@ -72,7 +72,7 @@ main (int argc, char **argv)
   g_signal_connect (G_OBJECT (button2), "clicked",
                     G_CALLBACK (on_change_policy_clicked), button);
 
-  hbox = gtk_hbox_new (FALSE, 10);
+  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
 
   gtk_container_add (GTK_CONTAINER (hbox), button);
   gtk_container_add (GTK_CONTAINER (hbox), button2);

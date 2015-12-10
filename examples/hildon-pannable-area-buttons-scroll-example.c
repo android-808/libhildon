@@ -63,7 +63,7 @@ main (int argc, char **argv)
     gtk_container_set_border_width (GTK_CONTAINER (window), 5);
 
     /* Create a VBox and pack some buttons */
-    vbox = gtk_vbox_new (FALSE, 1);
+    vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 1);
     for (i = 0; i < 80; i++) {
             gchar *label = g_strdup_printf ("Button number %d", i);
 
@@ -78,8 +78,8 @@ main (int argc, char **argv)
     panarea = hildon_pannable_area_new ();
     hildon_pannable_area_add_with_viewport(HILDON_PANNABLE_AREA (panarea), GTK_WIDGET (vbox));
 
-    vbox = gtk_vbox_new (FALSE, 10);
-    hbox = gtk_hbox_new (FALSE, 10);
+    vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 10);
+    hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
 
     button = hildon_gtk_button_new (HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);
     gtk_button_set_label (GTK_BUTTON (button), "Find the latest clicked button");

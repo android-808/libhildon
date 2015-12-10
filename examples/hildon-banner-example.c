@@ -117,7 +117,7 @@ main                                            (int argc,
     button4 = gtk_button_new_with_label ("Custom");
     g_signal_connect (button4, "clicked", G_CALLBACK (on_custom_clicked), NULL);
 
-    vbox = gtk_vbox_new (6, FALSE);
+    vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 6);
     gtk_box_pack_start (GTK_BOX (vbox), button1, TRUE, TRUE, 0);
     gtk_box_pack_start (GTK_BOX (vbox), button4, TRUE, TRUE, 0);
 

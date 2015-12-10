@@ -84,7 +84,7 @@ create_icon_view (gboolean      multi_select)
                                       GTK_SELECTION_SINGLE);
 
   renderer = gtk_cell_renderer_pixbuf_new ();
-  g_object_set (renderer, "stock-id", GTK_STOCK_NEW, NULL);
+  g_object_set (renderer, "icon-name", "document-new", NULL);
   gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (icon_view),
                               renderer,
                               TRUE);
@@ -146,7 +146,7 @@ main (int argc, char **argv)
                     G_CALLBACK (gtk_main_quit), NULL);
   gtk_container_set_border_width (GTK_CONTAINER (window), 6);
 
-  mainbox = gtk_vbox_new (FALSE, 6);
+  mainbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 6);
   gtk_container_add (GTK_CONTAINER (window), mainbox);
 
   /* old-style */
@@ -155,13 +155,13 @@ main (int argc, char **argv)
   gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
   gtk_box_pack_start (GTK_BOX (mainbox), label, FALSE, FALSE, 0);
 
-  padbox = gtk_hbox_new (FALSE, 6);
+  padbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
   gtk_box_pack_start (GTK_BOX (mainbox), padbox, FALSE, FALSE, 6);
 
   gtk_box_pack_start (GTK_BOX (padbox), gtk_label_new ("   "),
                       FALSE, FALSE, 6);
 
-  vbox = gtk_vbox_new (FALSE, 6);
+  vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 6);
   gtk_box_pack_start (GTK_BOX (padbox), vbox, TRUE, TRUE, 6);
 
   button = gtk_button_new_with_label ("Single selection");
@@ -181,13 +181,13 @@ main (int argc, char **argv)
   gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
   gtk_box_pack_start (GTK_BOX (mainbox), label, FALSE, FALSE, 0);
 
-  padbox = gtk_hbox_new (FALSE, 6);
+  padbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
   gtk_box_pack_start (GTK_BOX (mainbox), padbox, FALSE, FALSE, 6);
 
   gtk_box_pack_start (GTK_BOX (padbox), gtk_label_new ("   "),
                       FALSE, FALSE, 6);
 
-  vbox = gtk_vbox_new (FALSE, 6);
+  vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 6);
   gtk_box_pack_start (GTK_BOX (padbox), vbox, TRUE, TRUE, 6);
 
   button = gtk_button_new_with_label ("Direct activation");
@@ -202,13 +202,13 @@ main (int argc, char **argv)
   gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
   gtk_box_pack_start (GTK_BOX (mainbox), label, FALSE, FALSE, 0);
 
-  padbox = gtk_hbox_new (FALSE, 6);
+  padbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
   gtk_box_pack_start (GTK_BOX (mainbox), padbox, FALSE, FALSE, 6);
 
   gtk_box_pack_start (GTK_BOX (padbox), gtk_label_new ("   "),
                       FALSE, FALSE, 6);
 
-  vbox = gtk_vbox_new (FALSE, 6);
+  vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 6);
   gtk_box_pack_start (GTK_BOX (padbox), vbox, TRUE, TRUE, 6);
 
   button = gtk_button_new_with_label ("Single selection");
@@ -229,7 +229,7 @@ main (int argc, char **argv)
                     G_CALLBACK (gtk_main_quit), NULL);
   gtk_box_pack_end (GTK_BOX (mainbox), button, FALSE, FALSE, 0);
 
-  gtk_box_pack_end (GTK_BOX (mainbox), gtk_hseparator_new (),
+  gtk_box_pack_end (GTK_BOX (mainbox), gtk_separator_new (GTK_ORIENTATION_HORIZONTAL),
                     FALSE, FALSE, 6);
 
   gtk_widget_show_all (window);

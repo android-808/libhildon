@@ -46,12 +46,13 @@ main                                            (int    argc,
     hildon_gtk_init (&argc, &argv);
 
     win = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-    vbox = GTK_BOX (gtk_vbox_new (FALSE, 10));
-    table = gtk_table_new (3, 2, TRUE);
+    vbox = GTK_BOX (gtk_box_new (GTK_ORIENTATION_VERTICAL, 10));
+    table = gtk_grid_new ();
+    gtk_grid_set_column_homogeneous (GTK_GRID (table), TRUE);
     label = gtk_label_new ("none");
 
-    gtk_table_set_row_spacings (GTK_TABLE (table), 10);
-    gtk_table_set_col_spacings (GTK_TABLE (table), 10);
+    gtk_grid_set_row_spacing (GTK_GRID (table), 10);
+    gtk_grid_set_column_spacing (GTK_GRID (table), 10);
 
     gtk_box_pack_start (vbox, gtk_label_new ("Hildon check button example"), TRUE, TRUE, 0);
 
@@ -61,7 +62,8 @@ main                                            (int    argc,
         text = g_strdup_printf ("Button %d", i+1);
         gtk_button_set_label (GTK_BUTTON (button), text);
         g_free (text);
-        gtk_table_attach_defaults (GTK_TABLE (table), button, i/2, (i/2) + 1, i%2, (i%2) + 1);
+//        gtk_table_attach_defaults (GTK_TABLE (table), button, i/2, (i/2) + 1, i%2, (i%2) + 1);
+        gtk_grid_attach (GTK_GRID (table), button, i/2, (i%2), 1, 1);
         g_signal_connect (button, "toggled", G_CALLBACK (button_toggled_cb), label);
     }
 

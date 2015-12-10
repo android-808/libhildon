@@ -73,19 +73,19 @@ main                                            (int    argc,
 
     /* Window and vbox to pack everything */
     win = hildon_stackable_window_new ();
-    vbox = GTK_BOX (gtk_vbox_new (FALSE, 10));
+    vbox = GTK_BOX (gtk_box_new (GTK_ORIENTATION_VERTICAL, 10));
 
     /* Entry to modify the text of the main HildonEntry */
     textentry = hildon_entry_new (HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);
     textbutton = hildon_gtk_button_new (HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);
     gtk_button_set_label (GTK_BUTTON (textbutton), "Set text view text");
-    texthbox = gtk_hbox_new (FALSE, 10);
+    texthbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
 
     /* Entry to modify the placeholder of the main HildonEntry */
     placeholderentry = hildon_entry_new (HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);
     placeholderbutton = hildon_gtk_button_new (HILDON_SIZE_FINGER_HEIGHT | HILDON_SIZE_AUTO_WIDTH);
     gtk_button_set_label (GTK_BUTTON (placeholderbutton), "Set text view placeholder");
-    placeholderhbox = gtk_hbox_new (FALSE, 10);
+    placeholderhbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
 
     /* The text view */
     textview = GTK_TEXT_VIEW (hildon_text_view_new ());

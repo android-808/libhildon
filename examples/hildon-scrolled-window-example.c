@@ -42,7 +42,7 @@ main                                            (int argc,
     gtk_container_set_border_width (GTK_CONTAINER (window), 6);
 
     GtkWidget *scrolled_window = gtk_scrolled_window_new (NULL, NULL);
-    GtkWidget *vbox = gtk_vbox_new (6, FALSE);
+    GtkWidget *vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 6);
     int i = 0;
 
     for (i = 0; i < 20; i++) {
@@ -53,7 +53,7 @@ main                                            (int argc,
     }
 
     gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled_window), GTK_SHADOW_IN);
-    gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scrolled_window), vbox);
+    gtk_container_add (GTK_CONTAINER (scrolled_window), vbox);
 
     gtk_container_add (GTK_CONTAINER (window), scrolled_window);
     

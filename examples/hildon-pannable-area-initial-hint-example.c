@@ -104,7 +104,7 @@ create_content ()
   panarea = hildon_pannable_area_new ();
   gtk_container_add (GTK_CONTAINER (panarea), GTK_WIDGET (tv));
 
-  vbox = gtk_vbox_new (FALSE, 5);
+  vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 5);
 
   button = gtk_button_new_with_label ("Add a row");
   g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (on_add_clicked), store);
