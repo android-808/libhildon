@@ -73,7 +73,7 @@ START_TEST (test_add_with_scrollbar_regular)
   GList *children, *first;
 
   /* Test1: Check addition of a non viewport child */
-  box = gtk_hbox_new(FALSE, 0);
+  box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
   hildon_window_add_with_scrollbar(window, box);
 
   show_all_test_window(GTK_WIDGET(window));
@@ -98,13 +98,13 @@ START_TEST (test_add_with_scrollbar_regular)
   first = g_list_first(children);
   fail_if(first == NULL,
           "hildon-window: Added a hbox with scrollbar, but viewport child of the scrolled window has not children");
-  fail_if (!GTK_IS_HBOX(first->data),
+  fail_if (!GTK_IS_BOX(first->data),
 	   "hildon-window: Added a hbox with scrollbar, but retrieved child from the viewport of the scrolled window is not a hbox");
   g_list_free(children);
   gtk_container_remove(GTK_CONTAINER(window), scrolled_window);
 
   /* Test2: Check addition of a viewport child */
-  box = gtk_hbox_new(FALSE, 0);
+  box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
   viewport = gtk_viewport_new(GTK_ADJUSTMENT(gtk_adjustment_new(0, 0, 100, 10, 10, 1000)),
                               GTK_ADJUSTMENT(gtk_adjustment_new(0, 0, 100, 10, 10, 1000)));
   gtk_container_add(GTK_CONTAINER(viewport), box);
@@ -132,7 +132,7 @@ START_TEST (test_add_with_scrollbar_regular)
   first = g_list_first(children);
   fail_if(first == NULL,
           "hildon-window: Added a hbox inside a viewport with scrollbar, but viewport child of the scrolled window has not children");
-  fail_if (!GTK_IS_HBOX(first->data),
+  fail_if (!GTK_IS_BOX(first->data),
               "hildon-window: Added a hbox inside a viewport with scrollbar, but retrieved child from the viewport of the scrolled window is not a hbox");
   g_list_free(children);
   gtk_container_remove(GTK_CONTAINER(window), scrolled_window);
@@ -161,10 +161,10 @@ START_TEST (test_add_with_scrollbar_invalid)
   g_list_free(children);
 
   /* Test2: Add to a NULL window */
-  hildon_window_add_with_scrollbar(NULL, gtk_hbox_new(FALSE, 0));
+  hildon_window_add_with_scrollbar(NULL, gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0));
 
   /* Test3: Add a widget with a parent already set */
-  hbox = gtk_hbox_new(FALSE, 0);
+  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
   entry = gtk_entry_new();
   gtk_container_add(GTK_CONTAINER(hbox), entry);
   hildon_window_add_with_scrollbar(window, entry);

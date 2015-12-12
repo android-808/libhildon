@@ -135,7 +135,7 @@ START_TEST (test_is_mandatory_invalid)
 	   "hildon-caption: a NULL HildonCaption should fail and return FALSE");
 
   /* Test 2: invalid HildonCaption */
-  hbox = gtk_hbox_new (FALSE, 0);
+  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
   if (hildon_caption_is_mandatory ((HildonCaption *) (hbox)) == TRUE) 
     {
       gtk_widget_destroy (GTK_WIDGET (hbox));
@@ -191,7 +191,7 @@ START_TEST (test_set_status_invalid)
 	   hildon_caption_get_status (caption), HILDON_CAPTION_OPTIONAL);
 
   /* Test 3 */
-  hbox = gtk_hbox_new (FALSE, 0);
+  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
   hildon_caption_set_status ((HildonCaption *) (hbox), HILDON_CAPTION_MANDATORY);
   if (hildon_caption_get_status (caption) != HILDON_CAPTION_OPTIONAL) 
     {
@@ -255,7 +255,7 @@ START_TEST (test_get_status_invalid)
 	   hildon_caption_get_status (NULL), HILDON_CAPTION_OPTIONAL);
 
   /* Test 2: check an invalid HildonCaption */
-  hbox = gtk_hbox_new (FALSE, 0);
+  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
   if (hildon_caption_get_status ((HildonCaption *) (hbox)) != HILDON_CAPTION_OPTIONAL) 
     {
       gtk_widget_destroy (GTK_WIDGET (hbox));
@@ -333,7 +333,7 @@ START_TEST (test_set_label_invalid)
 	   hildon_caption_get_label (caption), "");
 
   /* Test 3 */
-  hbox = gtk_hbox_new (FALSE, 0);
+  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
   hildon_caption_set_label ((HildonCaption *) (hbox), TEST_LABEL);
   if (strcmp (hildon_caption_get_label ((HildonCaption *) (hbox)), "")!=0) 
     {
@@ -405,7 +405,7 @@ START_TEST (test_get_label_invalid)
 	   hildon_caption_get_label (NULL));
 
   /* Test 3: check an invalid HildonCaption */
-  hbox = gtk_hbox_new (FALSE, 0);
+  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
   if (strcmp (hildon_caption_get_label ((HildonCaption *) (hbox)), EMPTY_STRING)) 
     {
       gtk_widget_destroy (GTK_WIDGET (hbox));

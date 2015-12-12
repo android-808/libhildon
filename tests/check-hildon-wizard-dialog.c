@@ -59,7 +59,7 @@ fx_setup_default_wizard_dialog ()
 
   for(i=0; i<DEFAULT_NOTEBOOK_PAGES; i++)
     {
-      box[i] = GTK_BOX(gtk_vbox_new(FALSE, 0));
+      box[i] = GTK_BOX(gtk_box_new (GTK_ORIENTATION_VERTICAL, 0));
       label = GTK_LABEL(gtk_label_new(g_strdup_printf("Label for page %d", i)));
       gtk_box_pack_start (box[i], GTK_WIDGET(label),
                           TRUE, TRUE, 0);
@@ -106,7 +106,7 @@ START_TEST (test_set_get_property_wizard_notebook_regular)
   book = GTK_NOTEBOOK(gtk_notebook_new());
   for(i=0; i<2; i++)
     {
-      box[i] = GTK_BOX(gtk_vbox_new(FALSE, 0));
+      box[i] = GTK_BOX(gtk_box_new (GTK_ORIENTATION_VERTICAL, 0));
       label = GTK_LABEL(gtk_label_new(g_strdup_printf("Label for page %d", i)));
       gtk_box_pack_start (box[i], GTK_WIDGET(label),
                           TRUE, TRUE, 0);

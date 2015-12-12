@@ -90,7 +90,6 @@ check_environment()
     XCloseDisplay(display);
 
   /* Check maemo environment is up. We do this checking gconf is available */
-  g_type_init();
   client = gconf_client_get_default();
   gconf_client_get(client, GCONF_TEST_PATH ,&gconf_error);
   if (gconf_error)
