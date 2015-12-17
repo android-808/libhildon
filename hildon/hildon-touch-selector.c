@@ -827,6 +827,7 @@ _create_new_column (HildonTouchSelector * selector,
   tv = GTK_TREE_VIEW (gtk_tree_view_new ());
 
   gtk_tree_view_set_enable_search (tv, FALSE);
+  gtk_tree_view_set_headers_visible (tv, FALSE);
 
   filter = gtk_tree_model_filter_new (model, NULL);
   gtk_tree_view_set_model (tv, filter);
@@ -1573,8 +1574,6 @@ hildon_touch_selector_append_text_column (HildonTouchSelector * selector,
   column = hildon_touch_selector_append_column (selector, model, renderer,
                                                 "text", 0, NULL);
   hildon_touch_selector_column_set_text_column (column, 0);
-
-  g_object_set (column->priv->panarea, "sps", 28, NULL);
 
   return column;
 }
@@ -2596,8 +2595,6 @@ hildon_touch_selector_get_preferred_height      (GtkWidget *widget,
                                                  gint      *minimal,
                                                  gint      *natural)
 {
-  HildonTouchSelectorClass *klass;
-  GtkVBoxClass *parent_class;
   GSList *iter = NULL;
   gint height = 0;
   gint base_height = 0;
@@ -2607,9 +2604,7 @@ hildon_touch_selector_get_preferred_height      (GtkWidget *widget,
   iter = HILDON_TOUCH_SELECTOR (widget)->priv->columns;
 
   /* Default optimal values are the current ones */
-  klass = HILDON_TOUCH_SELECTOR_GET_CLASS (widget);
-  parent_class = g_type_class_peek_parent (klass);
-  GTK_WIDGET_CLASS (parent_class)->get_preferred_height (widget, minimal, natural);
+  GTK_WIDGET_CLASS (hildon_touch_selector_parent_class)->get_preferred_height (widget, minimal, natural);
 
   if (iter == NULL) {
     height = *natural;
