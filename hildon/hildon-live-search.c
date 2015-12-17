@@ -770,7 +770,6 @@ static void
 hildon_live_search_init                         (HildonLiveSearch *self)
 {
     HildonLiveSearchPrivate *priv;
-    GtkWidget *close_button_alignment;
     GtkToolItem *close_button_container;
     GtkWidget *close;
     GtkToolItem *close_button;
@@ -813,23 +812,21 @@ hildon_live_search_init                         (HildonLiveSearch *self)
     gtk_toolbar_insert (GTK_TOOLBAR (self), entry_container, 0);
     gtk_widget_show_all (GTK_WIDGET (entry_container));
 
-    close = gtk_image_new_from_icon_name ("general_close",
+    close = gtk_image_new_from_icon_name ("window-close",
                                           HILDON_ICON_SIZE_FINGER);
     gtk_widget_set_halign (close, GTK_ALIGN_START);
     gtk_widget_set_valign (close, GTK_ALIGN_START);
     close_button = gtk_tool_button_new (close, NULL);
     gtk_widget_set_can_focus (GTK_WIDGET (close_button), FALSE);
 
-    close_button_alignment = gtk_alignment_new (0.0f, 0.0f, 1.0f, 1.0f);
-    gtk_alignment_set_padding (GTK_ALIGNMENT (close_button_alignment),
-                               0, 0,
-                               0, HILDON_MARGIN_DEFAULT);
-    gtk_container_add (GTK_CONTAINER (close_button_alignment),
-                       GTK_WIDGET (close_button));
+    gtk_widget_set_margin_top(GTK_WIDGET (close_button), 0);
+    gtk_widget_set_margin_bottom(GTK_WIDGET (close_button), 0);
+    gtk_widget_set_margin_start(GTK_WIDGET (close_button), 0);
+    gtk_widget_set_margin_end(GTK_WIDGET (close_button), HILDON_MARGIN_DEFAULT);
 
     close_button_container = gtk_tool_item_new ();
     gtk_container_add (GTK_CONTAINER (close_button_container),
-                       close_button_alignment);
+                       GTK_WIDGET (close_button));
 
     gtk_toolbar_insert (GTK_TOOLBAR (self), close_button_container, -1);
     gtk_widget_show_all (GTK_WIDGET (close_button_container));
