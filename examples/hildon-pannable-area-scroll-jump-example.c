@@ -116,7 +116,7 @@ main (int argc, char **argv)
   GtkWidget *entry;
   gboolean scroll = TRUE;
   gboolean jump = FALSE;
-  GSList *stocks, *item;
+  GList *stocks, *item;
 
   hildon_gtk_init (&argc, &argv);
 
@@ -136,7 +136,7 @@ main (int argc, char **argv)
   renderer = gtk_cell_renderer_pixbuf_new ();
   gtk_cell_renderer_set_fixed_size (renderer, 48, 48);
   gtk_tree_view_column_pack_start (col, renderer, FALSE);
-  gtk_tree_view_column_set_attributes (col, renderer, "stock-id", PIXBUF_COLUMN, NULL);
+  gtk_tree_view_column_set_attributes (col, renderer, "icon-name", PIXBUF_COLUMN, NULL);
 
   renderer = gtk_cell_renderer_text_new ();
   gtk_tree_view_column_pack_start (col, renderer, FALSE);
@@ -144,26 +144,26 @@ main (int argc, char **argv)
   gtk_tree_view_append_column (GTK_TREE_VIEW(tv), col);
 
   /* Add some rows to the treeview */
-  stocks = gtk_stock_list_ids ();
+  stocks = gtk_icon_theme_list_icons (gtk_icon_theme_get_default (), "Actions");
   item = stocks;
   store = gtk_list_store_new (N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING);
   for (i = 0; i < 100; i++) {
     GtkTreeIter iter;
-    GtkStockItem stock_item;
+//    GtkStockItem stock_item;
     gchar *stock_id;
 
     stock_id = (gchar *)item->data;
-    gtk_stock_lookup (stock_id, &stock_item);
+//    gtk_stock_lookup (stock_id, &stock_item);
     gtk_list_store_append (store, &iter);
-    gtk_list_store_set (store, &iter, PIXBUF_COLUMN, stock_id, TEXT_COLUMN, stock_item.label, -1);
+    gtk_list_store_set (store, &iter, PIXBUF_COLUMN, stock_id, TEXT_COLUMN, stock_id, -1);
 
     item = item->next? item->next : stocks;
   }
   gtk_tree_view_set_model (GTK_TREE_VIEW (tv), GTK_TREE_MODEL (store));
   g_object_unref (store);
 
-  g_slist_foreach (stocks, (GFunc)g_free, NULL);
-  g_slist_free (stocks);
+  g_list_foreach (stocks, (GFunc)g_free, NULL);
+  g_list_free (stocks);
 
   /* Put everything in a pannable area */
   panarea = hildon_pannable_area_new ();

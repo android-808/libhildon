@@ -47,7 +47,7 @@ int main(int argc, char const *argv[])
   gtk_init(NULL, NULL);
 
   text = gtk_label_new("Moi!");
-  gtk_widget_modify_font(text, pango_font_description_from_string("300"));
+  gtk_widget_override_font(text, pango_font_description_from_string("300"));
 
   win = hildon_window_new();
   gtk_window_set_wmclass(GTK_WINDOW(win), "osso_calculator", "Osso_calculator");

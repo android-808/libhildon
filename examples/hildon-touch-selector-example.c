@@ -52,35 +52,38 @@ static GtkWidget *
 create_selector ()
 {
   GtkWidget *selector = NULL;
-  GSList *icon_list = NULL;
+  GList *icon_list = NULL;
   GtkListStore *store_icons = NULL;
-  GSList *item = NULL;
+  GList *item = NULL;
   GtkCellRenderer *renderer = NULL;
   HildonTouchSelectorColumn *column = NULL;
 
   selector = hildon_touch_selector_new ();
 
-  icon_list = gtk_stock_list_ids ();
+
+  //Set context to NULL to list all icons.
+  icon_list = gtk_icon_theme_list_icons (gtk_icon_theme_get_default (), "Actions");
 
   store_icons = gtk_list_store_new (1, G_TYPE_STRING);
-  for (item = icon_list; item; item = g_slist_next (item)) {
+  for (item = icon_list; item; item = g_list_next (item)) {
     GtkTreeIter iter;
     gchar *label = item->data;
-    if (gtk_style_lookup_icon_set (gtk_widget_get_style (selector),
-				   label)) {
+    if (gtk_icon_theme_lookup_icon (gtk_icon_theme_get_default (),
+				   label,
+				   24, 0)) {
 	    gtk_list_store_append (store_icons, &iter);
 	    gtk_list_store_set (store_icons, &iter, 0, label, -1);
     }
     g_free (label);
   }
-  g_slist_free (icon_list);
+  g_list_free (icon_list);
 
   renderer = gtk_cell_renderer_pixbuf_new ();
   gtk_cell_renderer_set_fixed_size (renderer, -1, 100);
 
   column = hildon_touch_selector_append_column (HILDON_TOUCH_SELECTOR (selector),
                                                 GTK_TREE_MODEL (store_icons),
-                                                renderer, "stock-id", 0, NULL);
+                                                renderer, "icon-name", 0, NULL);
   hildon_touch_selector_column_set_text_column (column, 0);
 
   g_object_unref (store_icons);

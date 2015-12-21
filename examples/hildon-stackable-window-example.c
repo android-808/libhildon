@@ -40,8 +40,8 @@ static GtkWidget*
 new_window                                      (HildonStackableWindow *parent)
 {
     GtkWidget *window, *hbbox, *vbox, *label, *add, *new;
-    GtkWidget *spin1hbox, *spin1label1, *spin1, *spin1label2, *pushbtn, *align1;
-    GtkWidget *spin2hbox, *spin2label1, *spin2, *spin2label2, *popbtn, *align2;
+    GtkWidget *spin1hbox, *spin1label1, *spin1, *spin1label2, *pushbtn;
+    GtkWidget *spin2hbox, *spin2label1, *spin2, *spin2label2, *popbtn;
     gint stack_number, win_number;
     gchar *text;
 
@@ -98,8 +98,8 @@ new_window                                      (HildonStackableWindow *parent)
     gtk_box_pack_start (GTK_BOX (spin1hbox), spin1, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (spin1hbox), spin1label2, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (spin1hbox), pushbtn, FALSE, FALSE, 10);
-    align1 = gtk_alignment_new (0.5, 0.5, 0, 0);
-    gtk_container_add (GTK_CONTAINER (align1), spin1hbox);
+    gtk_widget_set_halign (GTK_WIDGET (spin1hbox), GTK_ALIGN_CENTER);
+    gtk_widget_set_valign (GTK_WIDGET (spin1hbox), GTK_ALIGN_CENTER);
     g_signal_connect (G_OBJECT (pushbtn), "clicked", G_CALLBACK (push_windows), spin1);
 
     /* Spinbox and button to pop many windows */
@@ -114,15 +114,15 @@ new_window                                      (HildonStackableWindow *parent)
     gtk_box_pack_start (GTK_BOX (spin2hbox), spin2, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (spin2hbox), spin2label2, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (spin2hbox), popbtn, FALSE, FALSE, 10);
-    align2 = gtk_alignment_new (0.5, 0.5, 0, 0);
-    gtk_container_add (GTK_CONTAINER (align2), spin2hbox);
+    gtk_widget_set_halign (GTK_WIDGET (spin2hbox), GTK_ALIGN_CENTER);
+    gtk_widget_set_valign (GTK_WIDGET (spin2hbox), GTK_ALIGN_CENTER);
     g_signal_connect (G_OBJECT (popbtn), "clicked", G_CALLBACK (pop_windows), spin2);
 
     vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start (GTK_BOX (vbox), label, TRUE, TRUE, 0);
     gtk_box_pack_start (GTK_BOX (vbox), hbbox, FALSE, FALSE, 10);
-    gtk_box_pack_start (GTK_BOX (vbox), align1, FALSE, FALSE, 10);
-    gtk_box_pack_start (GTK_BOX (vbox), align2, FALSE, FALSE, 10);
+    gtk_box_pack_start (GTK_BOX (vbox), spin1hbox, FALSE, FALSE, 10);
+    gtk_box_pack_start (GTK_BOX (vbox), spin2hbox, FALSE, FALSE, 10);
 
     gtk_container_set_border_width (GTK_CONTAINER (window), 6);
     gtk_container_add (GTK_CONTAINER (window), vbox);

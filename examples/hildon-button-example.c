@@ -39,7 +39,7 @@ button_clicked_cb                               (HildonButton *button,
 static GtkWidget *
 create_image                                    (void)
 {
-    return gtk_image_new_from_stock (GTK_STOCK_INFO, GTK_ICON_SIZE_BUTTON);
+    return gtk_image_new_from_icon_name ("dialog-information", GTK_ICON_SIZE_BUTTON);
 }
 
 static void
@@ -261,6 +261,7 @@ common_buttons_window                           (GtkButton *b,
                                           HILDON_SIZE_FINGER_HEIGHT, HILDON_BUTTON_ARRANGEMENT_VERTICAL,
                                           "Left-aligned title", NULL);
     gtk_button_set_alignment (GTK_BUTTON (button), 0.0, 0.5);
+//DONT WORK YET    gtk_widget_set_halign (gtk_bin_get_child(GTK_BIN (button)), 0.0);
     gtk_box_pack_start (vbox, button, FALSE, FALSE, 0);
     g_signal_connect (button, "clicked", G_CALLBACK (button_clicked_cb), NULL);
 

@@ -52,30 +52,33 @@ static GtkWidget *
 create_selector ()
 {
   GtkWidget *selector = NULL;
-  GSList *icon_list = NULL;
+  GList *icon_list = NULL;
   GtkListStore *store_icons = NULL;
-  GSList *item = NULL;
+  GList *item = NULL;
   GtkCellRenderer *renderer = NULL;
   HildonTouchSelectorColumn *column = NULL;
 
   selector = hildon_touch_selector_new ();
 
-  icon_list = gtk_stock_list_ids ();
+  //Set context to NULL to list all icons.
+  icon_list = gtk_icon_theme_list_icons (gtk_icon_theme_get_default (), "Actions");
 
   store_icons = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_STRING);
-  for (item = icon_list; item; item = g_slist_next (item)) {
+  for (item = icon_list; item; item = g_list_next (item)) {
     GtkTreeIter iter;
-    GtkStockItem stock_item;
-    gchar *stock_id;
+    gchar *label;
 
-    stock_id = (gchar *)item->data;
-    gtk_stock_lookup (stock_id, &stock_item);
-    gtk_list_store_append (store_icons, &iter);
-    gtk_list_store_set (store_icons, &iter, 0, stock_id, 1, stock_item.label, -1);
+    label = (gchar *)item->data;
+    if (gtk_icon_theme_lookup_icon (gtk_icon_theme_get_default (),
+   				    label,
+				    24, 0)) {
+        gtk_list_store_append (store_icons, &iter);
+        gtk_list_store_set (store_icons, &iter, 0, label, 1, label, -1);
+    }
 
-    g_free (stock_id);
+    g_free (label);
   }
-  g_slist_free (icon_list);
+  g_list_free (icon_list);
 
   column = hildon_touch_selector_append_column (HILDON_TOUCH_SELECTOR (selector),
                                                 GTK_TREE_MODEL (store_icons),
@@ -88,7 +91,7 @@ create_selector ()
   gtk_cell_renderer_set_fixed_size (renderer, 75, 75);
   gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (column), renderer, FALSE);
   gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (column), renderer,
-                                  "stock-id", 0, NULL);
+                                  "icon-name", 0, NULL);
 
   renderer = gtk_cell_renderer_text_new ();
   g_object_set (renderer, "xalign", 0.5, NULL);

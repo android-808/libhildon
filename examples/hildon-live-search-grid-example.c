@@ -28,31 +28,30 @@ static GtkTreeModel *
 create_model (void)
 {
     GtkListStore *model;
-    GSList *icon_list = NULL;
-    GSList *item = NULL;
+    GList *icon_list = NULL;
+    GList *item = NULL;
 
     model = gtk_list_store_new (2, G_TYPE_STRING, GDK_TYPE_PIXBUF);
-    icon_list = gtk_stock_list_ids ();
+    icon_list = gtk_icon_theme_list_icons (gtk_icon_theme_get_default (), "Actions");
 
-    for (item = icon_list; item; item = g_slist_next (item)) {
+    for (item = icon_list; item; item = g_list_next (item)) {
         GtkTreeIter iter;
-        GtkStockItem stock_item;
-        gchar *stock_id;
+        gchar *icon_name;
         GdkPixbuf *pixbuf;
 
-        stock_id = (gchar *)item->data;
-        gtk_stock_lookup (stock_id, &stock_item);
+        icon_name = (gchar *)item->data;
+        //gtk_stock_lookup (icon_name, &stock_item);
         pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
-                                           stock_id, hildon_get_icon_pixel_size (GTK_ICON_SIZE_MENU),
+                                           icon_name, hildon_get_icon_pixel_size (GTK_ICON_SIZE_MENU),
                                            0, NULL);
         if (pixbuf) {
             gtk_list_store_append (model, &iter);
             gtk_list_store_set (model, &iter, 0,
-                                stock_item.label, 1, pixbuf, -1);
+                                icon_name, 1, pixbuf, -1);
 
             g_object_unref (pixbuf);
         }
-        g_free (stock_id);
+        g_free (icon_name);
     }
 
     return GTK_TREE_MODEL (model);

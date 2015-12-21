@@ -82,8 +82,6 @@ create_tree_view (gboolean      multi_select)
 
   tree_view = gtk_tree_view_new ();
 
-  gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (tree_view), TRUE);
-
   model = create_model ();
   gtk_tree_view_set_model (GTK_TREE_VIEW (tree_view), model);
   g_object_unref (model);
@@ -162,7 +160,18 @@ main (int argc, char **argv)
   /* old-style */
   label = gtk_label_new (NULL);
   gtk_label_set_markup (GTK_LABEL (label), "<b>Old-style behavior</b>");
-  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+ #if GTK_CHECK_VERSION (3,16,0)
+  gtk_label_set_xalign(label, 0.0);
+  gtk_label_set_yalign(label, 0.5);
+#else
+//  G_GNUC_BEGIN_IGNORE_DEPRECATIONS;
+//  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+  g_object_set (G_OBJECT (label),
+                "xalign", 0.0, 
+                "yalign", 0.5, 
+                NULL);
+//  G_GNUC_END_IGNORE_DEPRECATIONS;
+#endif
   gtk_box_pack_start (GTK_BOX (mainbox), label, FALSE, FALSE, 0);
 
   padbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
@@ -188,7 +197,18 @@ main (int argc, char **argv)
   /* normal-mode */
   label = gtk_label_new (NULL);
   gtk_label_set_markup (GTK_LABEL (label), "<b>Fremantle Normal mode</b>");
-  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+#if GTK_CHECK_VERSION (3,16,0)
+  gtk_label_set_xalign(label, 0.0);
+  gtk_label_set_yalign(label, 0.5);
+#else
+//  G_GNUC_BEGIN_IGNORE_DEPRECATIONS;
+//  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+  g_object_set (G_OBJECT (label),
+                "xalign", 0.0, 
+                "yalign", 0.5, 
+                NULL);
+//  G_GNUC_END_IGNORE_DEPRECATIONS;
+#endif
   gtk_box_pack_start (GTK_BOX (mainbox), label, FALSE, FALSE, 0);
 
   padbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
@@ -209,7 +229,18 @@ main (int argc, char **argv)
   /* edit-mode */
   label = gtk_label_new (NULL);
   gtk_label_set_markup (GTK_LABEL (label), "<b>Fremantle Edit mode</b>");
-  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+#if GTK_CHECK_VERSION (3,16,0)
+  gtk_label_set_xalign(label, 0.0);
+  gtk_label_set_yalign(label, 0.5);
+#else
+//  G_GNUC_BEGIN_IGNORE_DEPRECATIONS;
+//  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+  g_object_set (G_OBJECT (label),
+                "xalign", 0.0, 
+                "yalign", 0.5, 
+                NULL);
+//  G_GNUC_END_IGNORE_DEPRECATIONS;
+#endif
   gtk_box_pack_start (GTK_BOX (mainbox), label, FALSE, FALSE, 0);
 
   padbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
