@@ -57,7 +57,7 @@ typedef gchar *(*HildonTouchSelectorPrintFunc)  (HildonTouchSelector * selector,
 
 struct                                          _HildonTouchSelector
 {
-  GtkVBox parent_instance;
+  GtkBox parent_instance;
 
   /*< private > */
   HildonTouchSelectorPrivate *priv;
@@ -65,7 +65,7 @@ struct                                          _HildonTouchSelector
 
 struct                                          _HildonTouchSelectorClass
 {
-  GtkVBoxClass parent_class;
+  GtkBoxClass parent_class;
 
   /* signals */
   void (*changed)                               (HildonTouchSelector *selector,

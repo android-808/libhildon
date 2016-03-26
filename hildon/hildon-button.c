@@ -74,7 +74,7 @@
  *                                 HILDON_BUTTON_ARRANGEMENT_VERTICAL);
  *     hildon_button_set_text (HILDON_BUTTON (button), "Some title", "Some value");
  * <!-- -->
- *     image = gtk_image_new_from_stock (GTK_STOCK_INFO, GTK_ICON_SIZE_BUTTON);
+ *     image = gtk_image_new_from_icon_name ("gtk-info", GTK_ICON_SIZE_BUTTON);
  *     hildon_button_set_image (HILDON_BUTTON (button), image);
  *     hildon_button_set_image_position (HILDON_BUTTON (button), GTK_POS_RIGHT);
  * <!-- -->
@@ -104,7 +104,7 @@ struct                                          _HildonButtonPrivate
 {
     GtkLabel *title;
     GtkLabel *value;
-    GtkBox *hbox;
+    GtkBox *box;
     GtkWidget *label_box;
     GtkWidget *alignment;
     GtkWidget *image;
@@ -112,6 +112,7 @@ struct                                          _HildonButtonPrivate
     gfloat image_xalign;
     gfloat image_yalign;
     HildonButtonStyle style;
+    HildonSizeType size;
     guint setting_style : 1;
 };
 
@@ -148,6 +149,8 @@ hildon_button_set_property                      (GObject      *object,
         break;
     case PROP_SIZE:
         hildon_gtk_widget_set_theme_size (GTK_WIDGET (button), g_value_get_flags (value));
+        HildonButtonPrivate *priv = HILDON_BUTTON_GET_PRIVATE (button);
+        priv->size = g_value_get_flags (value);
         break;
     case PROP_ARRANGEMENT:
         hildon_button_set_arrangement (button, g_value_get_enum (value));
@@ -193,14 +196,14 @@ set_logical_font                                (GtkWidget *button)
 
     /* In buttons with vertical arrangement, the 'value' label uses a
      * different font */
-    if (GTK_IS_VBOX (priv->label_box)) {
+    if (gtk_orientable_get_orientation(GTK_ORIENTABLE(priv->label_box)) == GTK_ORIENTATION_VERTICAL) {
         GtkStyle *style = gtk_rc_get_style_by_paths (
             gtk_settings_get_default (), "SmallSystemFont", NULL, G_TYPE_NONE);
         if (style != NULL) {
             PangoFontDescription *font_desc = style->font_desc;
             if (font_desc != NULL) {
                 priv->setting_style = TRUE;
-                gtk_widget_modify_font (GTK_WIDGET (priv->value), font_desc);
+                gtk_widget_override_font (GTK_WIDGET (priv->value), font_desc);
                 priv->setting_style = FALSE;
             }
         }
@@ -210,11 +213,12 @@ set_logical_font                                (GtkWidget *button)
 static void
 set_logical_color                               (GtkWidget *button)
 {
-    GdkColor color;
+    GdkRGBA color;
     const gchar *colorname;
     HildonButtonPrivate *priv = HILDON_BUTTON_GET_PRIVATE (button);
     GtkWidget *label = GTK_WIDGET (priv->value);
     gboolean found;
+    GtkStyleContext *context;
 
     switch (priv->style) {
     case HILDON_BUTTON_STYLE_NORMAL:
@@ -227,26 +231,20 @@ set_logical_color                               (GtkWidget *button)
         g_return_if_reached ();
     }
 
-    gtk_widget_ensure_style (label);
-    found = gtk_style_lookup_color (gtk_widget_get_style (label),
-                                    colorname, &color);
+    context = gtk_widget_get_style_context (button);
+    found = gtk_style_context_lookup_color (context, colorname, &color);
     if (found) {
         priv->setting_style = TRUE;
-        gtk_widget_modify_fg (label, GTK_STATE_NORMAL, &color);
-        gtk_widget_modify_fg (label, GTK_STATE_PRELIGHT, &color);
+        gtk_widget_override_color(label, GTK_STATE_FLAG_NORMAL, &color);
         priv->setting_style = FALSE;
     }
 }
 
 static void
-hildon_button_style_set                         (GtkWidget *widget,
-                                                 GtkStyle  *previous_style)
+hildon_button_style_updated                        (GtkWidget *widget)
 {
     guint horizontal_spacing, vertical_spacing, image_spacing;
     HildonButtonPrivate *priv = HILDON_BUTTON_GET_PRIVATE (widget);
-
-    if (GTK_WIDGET_CLASS (hildon_button_parent_class)->style_set)
-        GTK_WIDGET_CLASS (hildon_button_parent_class)->style_set (widget, previous_style);
 
     /* Prevent infinite recursion when calling set_logical_font() and
      * set_logical_color() */
@@ -259,18 +257,64 @@ hildon_button_style_set                         (GtkWidget *widget,
                           "image-spacing", &image_spacing,
                           NULL);
 
-    if (GTK_IS_HBOX (priv->label_box)) {
+    if (gtk_orientable_get_orientation(GTK_ORIENTABLE(priv->label_box)) == GTK_ORIENTATION_HORIZONTAL) {
         gtk_box_set_spacing (GTK_BOX (priv->label_box), horizontal_spacing);
     } else {
         gtk_box_set_spacing (GTK_BOX (priv->label_box), vertical_spacing);
     }
 
-    if (GTK_IS_BOX (priv->hbox)) {
-        gtk_box_set_spacing (priv->hbox, image_spacing);
+    if (GTK_IS_BOX (priv->box)) {
+        gtk_box_set_spacing (priv->box, image_spacing);
     }
 
     set_logical_font (widget);
     set_logical_color (widget);
+}
+
+#define HILDON_HEIGHT_FINGER    70
+
+#define HILDON_HEIGHT_THUMB     105
+
+#define HILDON_WIDTH_FULLSCREEN (gdk_screen_get_width (gdk_screen_get_default ()))
+
+#define HILDON_WIDTH_HALFSCREEN (HILDON_WIDTH_FULLSCREEN / 2)
+
+static void
+hildon_button_get_preferred_height              (GtkWidget *widget, 
+                                                 gint      *minimal,
+                                                 gint      *natural)
+{
+    HildonButtonPrivate *priv = HILDON_BUTTON_GET_PRIVATE (widget);
+    GTK_WIDGET_CLASS (hildon_button_parent_class)->get_preferred_height (widget, minimal, natural);
+
+    /* Requested height */
+    if (priv->size & HILDON_SIZE_FINGER_HEIGHT)
+    {
+        *natural = HILDON_HEIGHT_FINGER;
+    }
+    else if (priv->size & HILDON_SIZE_THUMB_HEIGHT)
+    {
+        *natural = HILDON_HEIGHT_THUMB;
+    }
+}
+
+static void
+hildon_button_get_preferred_width               (GtkWidget *widget, 
+                                                 gint      *minimal,
+                                                 gint      *natural)
+{
+    HildonButtonPrivate *priv = HILDON_BUTTON_GET_PRIVATE (widget);
+    GTK_WIDGET_CLASS (hildon_button_parent_class)->get_preferred_width (widget, minimal, natural);
+
+    /* Requested width */
+    if (priv->size & HILDON_SIZE_HALFSCREEN_WIDTH)
+    {
+        *natural = HILDON_WIDTH_HALFSCREEN;
+    }
+    else if (priv->size & HILDON_SIZE_FULLSCREEN_WIDTH)
+    {
+        *natural = HILDON_WIDTH_FULLSCREEN;
+    }
 }
 
 static void
@@ -293,7 +337,10 @@ hildon_button_class_init                        (HildonButtonClass *klass)
     gobject_class->set_property = hildon_button_set_property;
     gobject_class->get_property = hildon_button_get_property;
     gobject_class->finalize = hildon_button_finalize;
-    widget_class->style_set = hildon_button_style_set;
+    widget_class->style_updated = hildon_button_style_updated;
+
+    widget_class->get_preferred_height = hildon_button_get_preferred_height;
+    widget_class->get_preferred_width = hildon_button_get_preferred_width;
 
     g_object_class_install_property (
         gobject_class,
@@ -381,7 +428,7 @@ hildon_button_init                              (HildonButton *self)
     priv->image_position = GTK_POS_LEFT;
     priv->image_xalign = 0.5;
     priv->image_yalign = 0.5;
-    priv->hbox = NULL;
+    priv->box = NULL;
     priv->label_box = NULL;
     priv->style = HILDON_BUTTON_STYLE_NORMAL;
     priv->setting_style = FALSE;
@@ -391,8 +438,25 @@ hildon_button_init                              (HildonButton *self)
 
     hildon_button_set_style (self, HILDON_BUTTON_STYLE_NORMAL);
 
-    gtk_misc_set_alignment (GTK_MISC (priv->title), 0, 0.5);
-    gtk_misc_set_alignment (GTK_MISC (priv->value), 0, 0.5);
+#if GTK_CHECK_VERSION (3,16,0)
+    gtk_label_set_xalign(priv->title, 0.0);
+    gtk_label_set_yalign(priv->title, 0.5);
+    gtk_label_set_xalign(priv->value, 0.0);
+    gtk_label_set_yalign(priv->value, 0.5);
+#else
+//  G_GNUC_BEGIN_IGNORE_DEPRECATIONS;
+//    gtk_misc_set_alignment (GTK_MISC (priv->title), 0, 0.5);
+//    gtk_misc_set_alignment (GTK_MISC (priv->value), 0, 0.5);
+    g_object_set (G_OBJECT (priv->title),
+                  "xalign", 0.0, 
+                  "yalign", 0.5, 
+                  NULL);
+    g_object_set (G_OBJECT (priv->value),
+                  "xalign", 0.0, 
+                  "yalign", 0.5, 
+                  NULL);
+//  G_GNUC_END_IGNORE_DEPRECATIONS;
+#endif
 
     g_object_ref_sink (priv->alignment);
 
@@ -570,10 +634,10 @@ hildon_button_set_arrangement                   (HildonButton            *button
 
     /* Pack everything */
     if (arrangement == HILDON_BUTTON_ARRANGEMENT_VERTICAL) {
-        priv->label_box = gtk_vbox_new (FALSE, 0);
+        priv->label_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
         set_logical_font (GTK_WIDGET (button));
     } else {
-        priv->label_box = gtk_hbox_new (FALSE, 0);
+        priv->label_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
     }
 
     g_object_ref_sink (priv->label_box);
@@ -897,7 +961,8 @@ hildon_button_set_title_alignment               (HildonButton *button,
 
     priv = HILDON_BUTTON_GET_PRIVATE (button);
 
-    gtk_misc_set_alignment (GTK_MISC (priv->title), xalign, yalign);
+    gtk_widget_set_halign (GTK_WIDGET(priv->title), xalign);
+    gtk_widget_set_valign (GTK_WIDGET(priv->title), yalign);
 }
 
 /**
@@ -923,7 +988,8 @@ hildon_button_set_value_alignment               (HildonButton *button,
 
     priv = HILDON_BUTTON_GET_PRIVATE (button);
 
-    gtk_misc_set_alignment (GTK_MISC (priv->value), xalign, yalign);
+    gtk_widget_set_halign (GTK_WIDGET(priv->value), xalign);
+    gtk_widget_set_valign (GTK_WIDGET(priv->value), yalign);
 }
 
 /**
@@ -1015,10 +1081,18 @@ static void
 hildon_button_construct_child                   (HildonButton *button)
 {
     HildonButtonPrivate *priv = HILDON_BUTTON_GET_PRIVATE (button);
+    GtkStyleContext *context;
     GtkWidget *child;
+    GtkWidget *box;
+    GtkWidget *align;
     gint image_spacing;
     const gchar *title, *value;
+    GtkWidget *image = NULL;
     GtkWidget *lb_parent;
+
+    context = gtk_widget_get_style_context (GTK_WIDGET (button));
+    gtk_style_context_remove_class (context, "image-button");
+    gtk_style_context_remove_class (context, "text-button");
 
     /* Don't do anything if the button is not constructed yet */
     if (G_UNLIKELY (priv->label_box == NULL))
@@ -1030,21 +1104,28 @@ hildon_button_construct_child                   (HildonButton *button)
     if (!priv->image && !title[0] && !value[0])
         return;
 
+    gtk_style_context_get_style (context,
+                                 "image-spacing", &image_spacing,
+                                 NULL);
+
     /* Save a ref to the image, and remove it from its container if necessary */
     if (priv->image) {
-        GtkWidget *parent = gtk_widget_get_parent (priv->image);
+        GtkWidget *parent;
 
-        g_object_ref (priv->image);
+        image = g_object_ref (priv->image);
 
+        parent = gtk_widget_get_parent (image);
         if (parent)
-            gtk_container_remove (GTK_CONTAINER (parent), priv->image);
+            gtk_container_remove (GTK_CONTAINER (parent), image);
     }
+
+    priv->image = NULL;
 
     lb_parent = gtk_widget_get_parent (priv->label_box);
     if (lb_parent)
         gtk_container_remove (GTK_CONTAINER (lb_parent), priv->label_box);
 
-    /* Remove the child from the container and add priv->alignment */
+    /* Remove the child from the container */
     child = gtk_bin_get_child (GTK_BIN (button));
     if (child != NULL && child != priv->alignment) {
         gtk_container_remove (GTK_CONTAINER (button), child);
@@ -1055,29 +1136,57 @@ hildon_button_construct_child                   (HildonButton *button)
         gtk_container_add (GTK_CONTAINER (button), GTK_WIDGET (priv->alignment));
     }
 
-    /* Create a new hbox */
-    if (priv->hbox) {
-        gtk_container_remove (GTK_CONTAINER (priv->alignment), GTK_WIDGET (priv->hbox));
+    if (image) {
+        priv->image = image;
+/*        g_object_set (priv->image,
+		      "visible", show_image (button),
+		      "no-show-all", TRUE,
+		      NULL);*/
+
+        if (priv->image_position == GTK_POS_LEFT ||
+	    priv->image_position == GTK_POS_RIGHT)
+	    box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, image_spacing);
+        else
+	    box = gtk_box_new (GTK_ORIENTATION_VERTICAL, image_spacing);
+
+        gtk_widget_set_valign (image, GTK_ALIGN_BASELINE);
+        gtk_widget_set_valign (box, GTK_ALIGN_BASELINE);
+
+        //if (priv->align_set)
+	    //align = gtk_alignment_new (priv->xalign, priv->yalign, 0.0, 0.0);
+        //else
+	    //align = gtk_alignment_new (0.5, 0.5, 0.0, 0.0);
+
+        //gtk_widget_set_valign (align, GTK_ALIGN_BASELINE);
+
+        if (priv->image_position == GTK_POS_LEFT ||
+	    priv->image_position == GTK_POS_TOP)
+	    gtk_box_pack_start (GTK_BOX (box), priv->image, FALSE, FALSE, 0);
+        else
+	    gtk_box_pack_end (GTK_BOX (box), priv->image, FALSE, FALSE, 0);
+
+        if (title[0] || value[0]) {
+            if (priv->image_position == GTK_POS_RIGHT ||
+	        priv->image_position == GTK_POS_BOTTOM)
+	        gtk_box_pack_start (GTK_BOX (box), priv->label_box, TRUE, TRUE, 0);
+	    else
+	        gtk_box_pack_end (GTK_BOX (box), priv->label_box, TRUE, TRUE, 0);
+	}
+        else
+        {
+            gtk_style_context_add_class (context, "image-button");
+        }
+
+        gtk_container_add (GTK_CONTAINER (priv->alignment), box);
+        gtk_widget_show_all (priv->alignment);
+
+        g_object_unref (image);
+  
+        return;
     }
-    gtk_widget_style_get (GTK_WIDGET (button), "image-spacing", &image_spacing, NULL);
-    priv->hbox = GTK_BOX (gtk_hbox_new (FALSE, image_spacing));
-    gtk_container_add (GTK_CONTAINER (priv->alignment), GTK_WIDGET (priv->hbox));
 
-    /* Pack the image and the alignment in the new hbox */
-    if (priv->image && priv->image_position == GTK_POS_LEFT)
-        gtk_box_pack_start (priv->hbox, priv->image, FALSE, FALSE, 0);
+    gtk_widget_set_valign (priv->label_box, GTK_ALIGN_BASELINE);
+    gtk_container_add (GTK_CONTAINER (priv->alignment), priv->label_box);
 
-    gtk_box_pack_start (priv->hbox, priv->label_box, TRUE, TRUE, 0);
-
-    if (priv->image && priv->image_position == GTK_POS_RIGHT)
-        gtk_box_pack_start (priv->hbox, priv->image, FALSE, FALSE, 0);
-
-    /* Set image alignment and remove previously set ref */
-    if (priv->image) {
-        gtk_misc_set_alignment (GTK_MISC (priv->image), priv->image_xalign, priv->image_yalign);
-        g_object_unref (priv->image);
-    }
-
-    /* Show everything */
-    gtk_widget_show_all (GTK_WIDGET (priv->alignment));
+    gtk_style_context_add_class (context, "text-button");
 }

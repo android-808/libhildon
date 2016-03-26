@@ -610,34 +610,6 @@ banner_set_label_size_request                   (HildonBanner *banner)
 }
 
 static void
-label_size_request_cb                          (GtkWidget      *label,
-                                                GtkRequisition *req)
-{
-    PangoLayout *layout;
-    PangoRectangle logical;
-    gint lines;
-
-    layout = gtk_label_get_layout (GTK_LABEL (label));
-    pango_layout_get_pixel_extents (layout, NULL, &logical);
-
-    /* Request only the actual width needed by the pango layout */
-    req->width = logical.width;
-
-    /* If the layout has now been wrapped and exceeds 3 lines, we truncate
-     * the rest of the label according to spec.
-     */
-    lines = pango_layout_get_line_count (layout);
-    if (pango_layout_is_wrapped (layout) && lines > 3) {
-        /* This calculation assumes that the same font is used
-         * throughout the banner -- this is usually the case on maemo
-         *
-         * FIXME: Pango >= 1.20 has pango_layout_set_height().
-         */
-        req->height = (logical.height * 3) / lines + 1;
-    }
-}
-
-static void
 screen_size_changed                            (GdkScreen *screen,
                                                 GtkWindow *banner)
 
@@ -796,7 +768,11 @@ hildon_banner_init                              (HildonBanner *self)
     gtk_label_set_line_wrap_mode (GTK_LABEL (priv->label), PANGO_WRAP_WORD_CHAR);
     gtk_label_set_justify (GTK_LABEL (priv->label), GTK_JUSTIFY_CENTER);
 
-    g_signal_connect (priv->label, "size-request", G_CALLBACK (label_size_request_cb), NULL);
+    /* If the label has been wrapped and exceeds 3 lines, we truncate
+     * the rest of the label according to spec.
+     */
+    gtk_label_set_ellipsize (GTK_LABEL (priv->label), PANGO_ELLIPSIZE_END);
+    gtk_label_set_lines (GTK_LABEL (priv->label), 3);
 
     gtk_container_set_border_width (GTK_CONTAINER (priv->layout), HILDON_MARGIN_DEFAULT);
     gtk_container_add (GTK_CONTAINER (self), priv->layout);

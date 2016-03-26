@@ -576,7 +576,7 @@ hildon_note_realize                             (GtkWidget *widget)
                      strlen (notification_type));
 
     if (is_info_note) {
-        g_signal_connect (priv->label, "size-request", G_CALLBACK (label_size_request), widget);
+//        g_signal_connect (priv->label, "size-request", G_CALLBACK (label_size_request), widget);
     }
 
     GdkScreen *screen = gtk_widget_get_screen (widget);

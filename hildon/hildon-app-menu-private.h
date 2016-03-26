@@ -29,7 +29,7 @@ struct                                          _HildonAppMenuPrivate
 {
     GtkBox *filters_hbox;
     GtkBox *vbox;
-    GtkTable *table;
+    GtkGrid *grid;
     GtkWindow *parent_window;
     GdkWindow *transfer_window;
     gboolean pressed_outside;

@@ -632,7 +632,9 @@ hildon_caption_get_preferred_height             (GtkWidget *widget,
 {
     gint caption_minimal, caption_natural;
     HildonCaptionPrivate *priv = NULL;
-    GtkStyle *style;
+    GtkStyleContext *context;
+    GtkBorder padding;
+    gint ythickness;
     g_return_if_fail (HILDON_IS_CAPTION(widget));
 
     priv = HILDON_CAPTION_GET_PRIVATE (widget);
@@ -643,14 +645,13 @@ hildon_caption_get_preferred_height             (GtkWidget *widget,
     if (GTK_WIDGET_CLASS (parent_class)->get_preferred_height)
         GTK_WIDGET_CLASS (parent_class)->get_preferred_height (widget, minimal_height, natural_height);
 
-    g_object_get (widget, "style", &style, NULL);
+    gtk_style_context_get_padding (gtk_widget_get_style_context (widget), gtk_widget_get_state_flags (widget), &padding);
+    ythickness = padding.top + padding.bottom;
 
-    if ((caption_minimal + (2 * style->ythickness)) > *minimal_height)
-        *minimal_height = caption_minimal + (2 * style->ythickness);
-    if ((caption_natural + (2 * style->ythickness)) > *natural_height)
-        *natural_height = caption_natural + (2 * style->ythickness);
-
-    g_object_unref (style);
+    if ((caption_minimal + (2 * ythickness)) > *minimal_height)
+        *minimal_height = caption_minimal + (2 * ythickness);
+    if ((caption_natural + (2 * ythickness)) > *natural_height)
+        *natural_height = caption_natural + (2 * ythickness);
 }
 
 static void

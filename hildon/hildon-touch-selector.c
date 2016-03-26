@@ -92,7 +92,7 @@
  * create_customized_selector ()
  * {
  *   GtkWidget *selector = NULL;
- *   GSList *icon_list = NULL;
+ *   GList *icon_list = NULL;
  *   GtkListStore *store_icons = NULL;
  *   GSList *item = NULL;
  *   GtkCellRenderer *renderer = NULL;
@@ -100,10 +100,10 @@
  * <!-- -->
  *   selector = hildon_touch_selector_new ();
  * <!-- -->
- *   icon_list = gtk_stock_list_ids ();
+ *   icon_list = gtk_icon_theme_list_icons (gtk_icon_theme_get_default (), "Actions");
  * <!-- -->
  *   store_icons = gtk_list_store_new (1, G_TYPE_STRING);
- *   for (item = icon_list; item; item = g_slist_next (item)) {
+ *   for (item = icon_list; item; item = g_list_next (item)) {
  *     GtkTreeIter iter;
  *     gchar *label = item->data;
  * <!-- -->
@@ -111,7 +111,7 @@
  *     gtk_list_store_set (store_icons, &amp;iter, 0, label, -1);
  *     g_free (label);
  *   }
- *   g_slist_free (icon_list);
+ *   g_list_free (icon_list);
  * <!-- -->
  *   renderer = gtk_cell_renderer_pixbuf_new ();
  *   gtk_cell_renderer_set_fixed_size (renderer, -1, 100);
@@ -196,10 +196,10 @@ G_DEFINE_TYPE (HildonTouchSelector, hildon_touch_selector, GTK_TYPE_BOX)
  * IMPLEMENTATION NOTES:
  * Struct to maintain the data of each column. The columns are the elements
  * of the widget that belongs properly to the selection behaviour. Although
- * internally the columns are arranged in a private #GtkHBox, as the selector
- * itself is a #GtkVBox, you can add more widgets, like buttons etc., so
- * you finally could have a widget with more elements that the columns, but
- * this doesn't belongs to the selection logic
+ * internally the columns are arranged in a private horizontal #GtkBox, as 
+ * the selector itself is a vertical #GtkBox, you can add more widgets,
+ * like buttons etc., so you finally could have a widget with more elements
+ * that the columns, but this doesn't belongs to the selection logic
  */
 struct _HildonTouchSelectorColumnPrivate
 {

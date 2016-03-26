@@ -48,12 +48,12 @@ typedef struct                                  _HildonEditToolbarClass HildonEd
 
 struct                                          _HildonEditToolbarClass
 {
-    GtkHBoxClass parent_class;
+    GtkBoxClass parent_class;
 };
 
 struct                                          _HildonEditToolbar
 {
-    GtkHBox parent;
+    GtkBox parent;
 };
 
 GType

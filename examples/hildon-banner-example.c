@@ -26,17 +26,16 @@
 #include                                        <cairo.h>
 
 static gboolean
-area_expose                                     (GtkWidget      *widget,
-                                                 GdkEventExpose *expose,
+area_draw                                       (GtkWidget      *widget,
+                                                 cairo_t        *cr,
                                                  gpointer        data)
 {
-    cairo_t *cr = gdk_cairo_create (gtk_widget_get_window (widget));
     gint width, height;
     GError *error = NULL;
 
     GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
-                                                  "statusarea_volumelevel2",
-                                                  HILDON_ICON_PIXEL_SIZE_STYLUS,
+                                                  "edit-find",//"statusarea_volumelevel2",
+                                                  HILDON_ICON_PIXEL_SIZE_STYLUS, //32x32
                                                   0, &error);
 
     gint v_margins = 15;
@@ -66,7 +65,6 @@ area_expose                                     (GtkWidget      *widget,
                                  (height - gdk_pixbuf_get_height (pixbuf))/2);
     cairo_paint (cr);
 
-    cairo_destroy (cr);
     g_object_unref (pixbuf);
     return FALSE;
 }
@@ -77,8 +75,8 @@ custom_widget_new (void)
     GtkWidget *area = gtk_event_box_new ();
     gtk_widget_set_has_window (area, FALSE);
     gtk_widget_set_size_request (area, 600, 50);
-    g_signal_connect (area, "expose-event",
-                      G_CALLBACK (area_expose),
+    g_signal_connect (area, "draw",
+                      G_CALLBACK (area_draw),
                       NULL);
     return area;
 }

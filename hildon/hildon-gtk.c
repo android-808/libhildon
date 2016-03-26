@@ -443,7 +443,7 @@ hildon_gtk_window_take_screenshot_sync          (GtkWindow *window,
  * jumps to the desired position, see gtk_range_set_jump_to_position().
  * Further more the value is not displayed, see gtk_scale_set_draw_value().
  *
- * Returns: a new hildonized #GtkHScale
+ * Returns: a new hildonized horizontally orientated #GtkScale
  *
  * Since: 2.2
  **/
@@ -467,7 +467,7 @@ hildon_gtk_hscale_new                           (void)
  * jumps to the desired position, see gtk_range_set_jump_to_position().
  * Further more the value is not displayed, see gtk_scale_set_draw_value().
  *
- * Returns: a new hildonized #GtkVScale
+ * Returns: a new hildonized vertically orientated #GtkScale
  *
  * Since: 2.2
  **/
@@ -526,9 +526,15 @@ hildon_gtk_widget_set_theme_size (GtkWidget      *widget,
 
     /* Requested width */
   if (size & HILDON_SIZE_HALFSCREEN_WIDTH)
-    width = HILDON_WIDTH_HALFSCREEN;
+    {
+      //width = HILDON_WIDTH_HALFSCREEN;
+      gtk_widget_set_hexpand (widget, TRUE);
+    }
   else if (size & HILDON_SIZE_FULLSCREEN_WIDTH)
-    width = HILDON_WIDTH_FULLSCREEN;
+    {
+      //width = HILDON_WIDTH_FULLSCREEN;
+      gtk_widget_set_hexpand (widget, TRUE);
+    }
 
   gtk_widget_set_size_request (widget, width, height);
 
