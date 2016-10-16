@@ -161,8 +161,8 @@ main (int argc, char **argv)
   label = gtk_label_new (NULL);
   gtk_label_set_markup (GTK_LABEL (label), "<b>Old-style behavior</b>");
  #if GTK_CHECK_VERSION (3,16,0)
-  gtk_label_set_xalign(label, 0.0);
-  gtk_label_set_yalign(label, 0.5);
+  gtk_label_set_xalign(GTK_LABEL (label), 0.0);
+  gtk_label_set_yalign(GTK_LABEL (label), 0.5);
 #else
 //  G_GNUC_BEGIN_IGNORE_DEPRECATIONS;
 //  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
@@ -198,8 +198,8 @@ main (int argc, char **argv)
   label = gtk_label_new (NULL);
   gtk_label_set_markup (GTK_LABEL (label), "<b>Fremantle Normal mode</b>");
 #if GTK_CHECK_VERSION (3,16,0)
-  gtk_label_set_xalign(label, 0.0);
-  gtk_label_set_yalign(label, 0.5);
+  gtk_label_set_xalign(GTK_LABEL (label), 0.0);
+  gtk_label_set_yalign(GTK_LABEL (label), 0.5);
 #else
 //  G_GNUC_BEGIN_IGNORE_DEPRECATIONS;
 //  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
@@ -230,8 +230,8 @@ main (int argc, char **argv)
   label = gtk_label_new (NULL);
   gtk_label_set_markup (GTK_LABEL (label), "<b>Fremantle Edit mode</b>");
 #if GTK_CHECK_VERSION (3,16,0)
-  gtk_label_set_xalign(label, 0.0);
-  gtk_label_set_yalign(label, 0.5);
+  gtk_label_set_xalign(GTK_LABEL (label), 0.0);
+  gtk_label_set_yalign(GTK_LABEL (label), 0.5);
 #else
 //  G_GNUC_BEGIN_IGNORE_DEPRECATIONS;
 //  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
