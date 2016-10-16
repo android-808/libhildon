@@ -35,7 +35,13 @@
  * #GtkAlignment and they do not expand by default (they don't use the
  * full space of the button).
  *
- * To change the alignment of both labels, use gtk_button_set_alignment()
+ * To change the alignment of both labels, use
+ * #if GTK_CHECK_VERSION (3,14,0)
+ *   gtk_widget_set_halign (button, GTK_ALIGN_FILL);
+ *   gtk_widget_set_halign (gtk_bin_get_child (GTK_BIN (button)), GTK_ALIGN_START);
+ * #else
+ *   gtk_button_set_alignment (GTK_BUTTON (button), 0.0, 0.5);
+ * #endif
  *
  * To make them expand and use the full space of the button, use
  * hildon_button_set_alignment().
