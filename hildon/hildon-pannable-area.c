@@ -230,30 +230,10 @@ static void hildon_pannable_area_set_property (GObject * object,
                                                GParamSpec * pspec);
 static void hildon_pannable_area_remove_timeouts (GtkWidget * widget);
 static void hildon_pannable_area_dispose (GObject * object);
-static void hildon_pannable_area_realize (GtkWidget * widget);
-static void hildon_pannable_area_unrealize (GtkWidget * widget);
-static void hildon_pannable_area_child_allocate_calculate (GtkWidget * widget,
-                                                           GtkAllocation * allocation,
-                                                           GtkAllocation * child_allocation);
-static void hildon_pannable_area_grab_notify (GtkWidget *widget,
-                                              gboolean was_grabbed,
-                                              gpointer user_data);
-static void hildon_pannable_area_redraw (HildonPannableArea * area);
 static GdkWindow * hildon_pannable_area_get_topmost (GdkWindow * window,
                                                      gint x, gint y,
                                                      gint * tx, gint * ty,
                                                      GdkEventMask mask);
-static void hildon_pannable_area_refresh (HildonPannableArea * area);
-static gboolean hildon_pannable_area_check_scrollbars (HildonPannableArea * area);
-static void hildon_pannable_axis_scroll (HildonPannableArea *area,
-                                         GtkAdjustment *adjust,
-                                         gdouble *vel,
-                                         gdouble inc,
-                                         gint *overshooting,
-                                         gint *overshot_dist,
-                                         gdouble *scroll_to,
-                                         gint overshoot_max,
-                                         gboolean *s);
 static void hildon_pannable_area_child_mapped (GtkWidget *widget,
                                                GdkEvent  *event,
                                                gpointer user_data);
@@ -365,7 +345,6 @@ hildon_pannable_area_set_property (GObject * object,
 static void
 hildon_pannable_area_dispose (GObject * object)
 {
-  HildonPannableAreaPrivate *priv = HILDON_PANNABLE_AREA (object)->priv;
   GtkWidget *child = gtk_bin_get_child (GTK_BIN (object));
 
   hildon_pannable_area_remove_timeouts (GTK_WIDGET (object));
@@ -400,114 +379,6 @@ hildon_pannable_area_remove_timeouts (GtkWidget * widget)
   if (priv->motion_event_scroll_timeout){
     g_source_remove (priv->motion_event_scroll_timeout);
     priv->motion_event_scroll_timeout = 0;
-  }
-}
-
-static void
-hildon_pannable_area_unrealize (GtkWidget * widget)
-{
-  HildonPannableAreaPrivate *priv;
-
-  priv = HILDON_PANNABLE_AREA (widget)->priv;
-
-  if (gtk_widget_get_mapped (widget))
-      hildon_pannable_area_unmap (widget);
-
-  hildon_pannable_area_remove_timeouts (widget);
-
-  if (priv->event_window != NULL) {
-    gdk_window_set_user_data (priv->event_window, NULL);
-    gdk_window_destroy (priv->event_window);
-    priv->event_window = NULL;
-  }
-
-  if (GTK_WIDGET_CLASS (hildon_pannable_area_parent_class)->unrealize)
-    (*GTK_WIDGET_CLASS (hildon_pannable_area_parent_class)->unrealize)(widget);
-}
-
-static void
-hildon_pannable_area_child_allocate_calculate (GtkWidget * widget,
-                                               GtkAllocation * allocation,
-                                               GtkAllocation * child_allocation)
-{
-  gint border_width;
-  HildonPannableAreaPrivate *priv;
-
-  border_width = gtk_container_get_border_width (GTK_CONTAINER (widget));
-
-  priv = HILDON_PANNABLE_AREA (widget)->priv;
-
-  child_allocation->x = 0;
-  child_allocation->y = 0;
-  child_allocation->width = MAX (allocation->width - 2 * border_width -
-                                 (priv->vscroll_visible ? priv->vscroll_rect.width : 0), 0);
-  child_allocation->height = MAX (allocation->height - 2 * border_width -
-                                  (priv->hscroll_visible ? priv->hscroll_rect.height : 0), 0);
-
-  if (priv->overshot_dist_y > 0) {
-    child_allocation->y = MIN (child_allocation->y + priv->overshot_dist_y,
-                               child_allocation->height);
-    child_allocation->height = MAX (child_allocation->height - priv->overshot_dist_y, 0);
-  } else if (priv->overshot_dist_y < 0) {
-    child_allocation->height = MAX (child_allocation->height + priv->overshot_dist_y, 0);
-  }
-
-  if (priv->overshot_dist_x > 0) {
-    child_allocation->x = MIN (child_allocation->x + priv->overshot_dist_x,
-                               child_allocation->width);
-    child_allocation->width = MAX (child_allocation->width - priv->overshot_dist_x, 0);
-  } else if (priv->overshot_dist_x < 0) {
-    child_allocation->width = MAX (child_allocation->width + priv->overshot_dist_x, 0);
-  }
-}
-
-static void
-toplevel_window_unmapped (GtkWidget * widget,
-                          HildonPannableArea * area)
-{
-    area->priv->initial_effect = TRUE;
-}
-
-static void
-hildon_pannable_area_grab_notify (GtkWidget *widget,
-                                  gboolean was_grabbed,
-                                  gpointer user_data)
-{
-  /* an internal widget has grabbed the focus and now has returned it,
-     we have to do some release actions */
-  if (was_grabbed) {
-    HildonPannableAreaPrivate *priv = HILDON_PANNABLE_AREA (widget)->priv;
-
-    priv->scroll_indicator_event_interrupt = 0;
-
-    if ((!priv->scroll_indicator_timeout)&&(priv->scroll_indicator_alpha)>0.1) {
-      priv->scroll_delay_counter = priv->scrollbar_fade_delay;
-
-      hildon_pannable_area_launch_fade_timeout (HILDON_PANNABLE_AREA (widget),
-                                                priv->scroll_indicator_alpha);
-    }
-
-    priv->last_type = 3;
-    priv->moved = FALSE;
-  }
-}
-
-static void
-hildon_pannable_area_redraw (HildonPannableArea * area)
-{
-  HildonPannableAreaPrivate *priv = HILDON_PANNABLE_AREA (area)->priv;
-
-  /* Redraw scroll indicators */
-  if (gtk_widget_is_drawable (GTK_WIDGET (area))) {
-      if (priv->hscroll_visible) {
-        gdk_window_invalidate_rect (gtk_widget_get_window (GTK_WIDGET (area)),
-                                    &priv->hscroll_rect, FALSE);
-      }
-
-      if (priv->vscroll_visible) {
-        gdk_window_invalidate_rect (gtk_widget_get_window (GTK_WIDGET (area)),
-                                    &priv->vscroll_rect, FALSE);
-      }
   }
 }
 
