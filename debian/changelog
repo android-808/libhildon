@@ -1,3 +1,10 @@
+libhildon3 (2.3.1-1) unstable; urgency=low
+
+  * Rename package to libhildon3.
+  * Install headers to /usr/include/hildon-3
+
+ -- Robert Irvin <android_808@hotmail.com>  Mon, 21 Nov 2016 20:07:56 +0000
+
 libhildon (2.3.1-1) precise; urgency=low
 
   * Fix some depreciated messages.
